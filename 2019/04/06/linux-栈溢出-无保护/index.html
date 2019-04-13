@@ -79,18 +79,18 @@
 
 
 
-<meta name="description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn &amp;lt; !--more--&amp;gt; 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cd">
+<meta name="description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cdecl main(int argc,">
 <meta name="keywords" content="pwn入门">
 <meta property="og:type" content="article">
 <meta property="og:title" content="linux-栈溢出-无保护">
 <meta property="og:url" content="http://yoursite.com/2019/04/06/linux-栈溢出-无保护/index.html">
 <meta property="og:site_name" content="时钟">
-<meta property="og:description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn &amp;lt; !--more--&amp;gt; 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cd">
+<meta property="og:description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cdecl main(int argc,">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-04-13T10:29:01.069Z">
+<meta property="og:updated_time" content="2019-04-13T10:40:49.534Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="linux-栈溢出-无保护">
-<meta name="twitter:description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn &amp;lt; !--more--&amp;gt; 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cd">
+<meta name="twitter:description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cdecl main(int argc,">
 
 
 
@@ -326,7 +326,6 @@
     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。
 
 PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn
-&lt; !--more--&gt;
 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码）
 int __cdecl main(int argc, const char **argv, const char **envp)
 </code></pre><p>{<br>  char s; // [rsp+0h] [rbp-80h]</p>
