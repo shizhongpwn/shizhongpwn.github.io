@@ -88,7 +88,7 @@
 <meta property="og:description" content="在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环 入口点：    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令    EP:    EP是windows可执行文件（E">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/2019/04/27/逆向小知识总结/1.png">
-<meta property="og:updated_time" content="2019-04-27T10:24:44.402Z">
+<meta property="og:updated_time" content="2019-04-27T10:35:04.157Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="逆向小知识总结">
 <meta name="twitter:description" content="在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环 入口点：    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令    EP:    EP是windows可执行文件（E">
@@ -333,8 +333,20 @@
 <p>入口点：<br>    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令<br>    <img src="/2019/04/27/逆向小知识总结/1.png" title="This is an image"><br>EP:<br>    EP是windows可执行文件（EXE,DLL,SYS等）的代码入口点，是执行应用程序时最先执行的代码的起始位置，它依赖于CPU</p>
 <p>查找main函数的方法：<br>    简单有效：F7,F8查看函数 （一些经验就是可以通过注释区的注释直接步过一些函数列如一些winAPI）</p>
 <p>大本营：<br>    为了重复加载程序方便，我们可以在一些地方下断点防止一些麻烦（就比如不用一次次的找main函数）<br>    1.GOTO 命令（Ctrl+G）然后 F4<br>    2.设置断点<br>    3.加上注释（快捷键 ; ）<br>    4.加上标签 （快捷键 : ）</p>
-<p>快速查找指定代码的四种方法：<br>    1.代码执行法<br>    2.字符串检索法<br>    3.API检索法（1）：程序没有压缩器/保护器的保护  用All intermodular calls 生成API函数列表<br>    3.API检索法（2）：存在（1）中情况   此时DLL代码库被加载到内存后，我们可以直接向DLL库中添加断点 （快捷键Alt + M 打开内存映射窗口可以查看一些进程内存和USER32库的加载情况），同时 Name in all modules可以列出所被加载的DLL文件中提供的API</p>
-
+<p>快速查找指定代码的四种方法：<br>    1.代码执行法<br>    2.字符串检索法<br>    3.API检索法（1）：程序没有压缩器/保护器的保护  用All intermodular calls 生成API函数列表<br>    3.API检索法（2）：存在（1）中情况   此时DLL代码库被加载到内存后，我们可以直接向DLL库中添加断点 （快捷键Alt + M 打开内存映射窗口可以查看一些进程内存和USER32库的加载情况），同时 Name in all modules可以列出所被加载的DLL文件中提供的API<br>函数调用约定：<br>    cdecl:<br>    调用者直接清理其压入栈的函数参数<br>    stdcall:<br>    一个使用例子</p>
+<pre><code>#include &quot;stdio.h&quot;
+int _stdcall add(int a ,int b)
+{
+    return a+b;
+}
+int main()
+{
+    return add(1,2);
+}
+这种方式是用被调用函数自己清理栈，其汇编结尾 一般用 RETN+一个数字（栈大小）
+fastcall:
+与stdcall方式基本相似，但是该方式通过使用寄存器（而非栈内存）去传递那些需要传递给函数的部分参数（前两个）一般为ECX,EDX
+</code></pre>
       
     </div>
     
