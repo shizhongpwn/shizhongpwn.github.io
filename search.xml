@@ -8,9 +8,21 @@
       <link href="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/"/>
       <url>/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/</url>
       
-        <content type="html"><![CDATA[]]></content>
+        <content type="html"><![CDATA[<p>在VB中：<br><strong>vbaVarForInit() , </strong>vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环</p><pre><code>MSVBVM50.rtcMsgBox  \\调用消息框</code></pre><p>入口点：<br>    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令<br><img src="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/1.png" title="This is an image"><br>EP:<br>    EP是windows可执行文件（EXE,DLL,SYS等）的代码入口点，是执行应用程序时最先执行的代码的起始位置，它依赖于CPU</p><p>查找main函数的方法：<br>    简单有效：F7,F8查看函数 （一些经验就是可以通过注释区的注释直接步过一些函数列如一些winAPI）</p><p>大本营：<br>    为了重复加载程序方便，我们可以在一些地方下断点防止一些麻烦（就比如不用一次次的找main函数）</p><ol><li>GOTO 命令（Ctrl+G）然后 F4</li><li>设置断点</li><li>加上注释（快捷键 ; ）</li><li>加上标签 （快捷键 : ）</li></ol><p>快速查找指定代码的四种方法：    </p><ol><li>代码执行法</li><li>字符串检索法</li><li>API检索法（1）：程序没有压缩器/保护器的保护  用All intermodular calls 生成API函数列表</li><li>API检索法（2）：存在（1）中情况   此时DLL代码库被加载到内存后，我们可以直接向DLL库中添加断点 （快捷键Alt + M 打开内存映射窗口可以查看一些进程内存和USER32库的加载情况），同时 Name in all modules可以列出所被加载的DLL文件中提供的API</li></ol><p>函数调用约定：<br>  cdecl:<br>    调用者直接清理其压入栈的函数参数<br>   stdcall:<br>    一个使用例子</p><pre><code>#include &quot;stdio.h&quot;int _stdcall add(int a ,int b){    return a+b;}int main(){    return add(1,2);}</code></pre><p>  这种方式是用被调用函数自己清理栈，其汇编结尾 一般用 RETN+一个数字（栈大小）<br>  fastcall:<br>  与stdcall方式基本相似，但是该方式通过使用寄存器（而非栈内存）去传递那些需要传递给函数的部分参数（前两个）一般为ECX,EDX</p><ul><li>逆向工程中函数调用的返回值一般保存在eax中，在程序call指令之后一般就会有对eax寄存器的处理，这一点可以用来判断函数的用途和结构</li><li><p>.逆向工程中确定函数参数多少的方法：</p><pre><code>进入函数后可以看到它栈空间中存储的返回地址，通过该返回地址你可以找到调用该函数的起始地址，然后可以分析在进入函数体前后的栈空间大小来确定参数多少</code></pre></li><li><p>一些逆向可能会直接在程序内部存在注册码，可以通过找到注册码错误的字符串确定比较注册码正确与否的函数，而在改函数的附近一般会存在正确的注册码。</p></li></ul>]]></content>
       
       
+      <categories>
+          
+          <category> 逆向工程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> reverse </tag>
+            
+        </tags>
       
     </entry>
     
