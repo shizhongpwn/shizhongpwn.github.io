@@ -462,33 +462,69 @@ $(function () {
             
             <div class="article col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
-                    <a href="/2019/04/27/ni-xiang-xiao-zhi-shi-zong-jie/">
+                    <a href="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/">
                         <div class="card-image">
                             
                             
-                            <img src="/medias/featureimages/5.jpg" class="responsive-img" alt="逆向小知识总结">
+                            <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="逆向工程小知识">
                             
-                            <span class="card-title">逆向小知识总结</span>
+                            <span class="card-title">逆向工程小知识</span>
                         </div>
                     </a>
 
                     <div class="card-content article-content">
                         <div class="summary block-with-text">
                             
-                                在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环
-入口点：    调试器载入程序后停止的地方为入
+                                
                             
                         </div>
                         <div class="publish-info">
                             <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-04-27
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-user fa-fw"></i>
+                                时钟
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2019/08/02/glibc-heap-uaf/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="glibc heap UAF">
+                            
+                            <span class="card-title">glibc heap UAF</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                use after free（UAF）
+
+重新malloc一样的大小，会拿到曾经Free的chunk，此时就会有两个指针p，和q指向同一个内存块，使用这两个的指针操作混在一起（之前的哪个指针在chun被free后没有被置为NULL，形成悬空
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
                             </span>
                             <span class="publish-author">
                                 
                                 <i class="fa fa-bookmark fa-fw icon-category"></i>
                                 
-                                <a href="/categories/逆向工程/" class="post-category" target="_blank">
-                                    逆向工程
+                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
                                 </a>
                                 
                                 
@@ -499,8 +535,8 @@ $(function () {
                     
                     <div class="card-action article-tags">
                         
-                        <a href="/tags/逆向工程/" target="_blank">
-                            <span class="chip bg-color">逆向工程</span>
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
                         </a>
                         
                     </div>
@@ -510,32 +546,36 @@ $(function () {
             
             <div class="article col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
-                    <a href="/2019/04/24/te-bie-tao-yan-de-ecx-4/">
+                    <a href="/2019/08/02/glibc-heap-unlink-lou-dong/">
                         <div class="card-image">
                             
                             
-                            <img src="/medias/featureimages/11.jpg" class="responsive-img" alt="特别讨厌的ecx-4">
+                            <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="glibc heap unlink漏洞">
                             
-                            <span class="card-title">特别讨厌的ecx-4</span>
+                            <span class="card-title">glibc heap unlink漏洞</span>
                         </div>
                     </a>
 
                     <div class="card-content article-content">
                         <div class="summary block-with-text">
                             
-                                ecx-4栈地址保护：先介绍一下这是什么鬼 。。。。。。我们正常栈转移的方式一般都是push ebp 和leave ret 配合，但是这个题确使用的是用ecx来保存main函数的地址main开始：Main 结束:这使得我们构造exp攻击的时
+                                知识点：
+
+free操作会检查前后相邻堆块是否in_use，空闲的话就会进行合并操作
+空闲的堆块一般以双向链表的形式存在（fastbin是单向链表不适用此种攻击）
+unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并操作，那么需
                             
                         </div>
                         <div class="publish-info">
                             <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-04-24
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
                             </span>
                             <span class="publish-author">
                                 
                                 <i class="fa fa-bookmark fa-fw icon-category"></i>
                                 
-                                <a href="/categories/PWM/" class="post-category" target="_blank">
-                                    PWM
+                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
                                 </a>
                                 
                                 
@@ -546,105 +586,8 @@ $(function () {
                     
                     <div class="card-action article-tags">
                         
-                        <a href="/tags/pwn入门/" target="_blank">
-                            <span class="chip bg-color">pwn入门</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/04/13/tong-guo-esp-kuo-da-zhan-kong-jian/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/3.jpg" class="responsive-img" alt="通过esp扩大栈空间">
-                            
-                            <span class="card-title">通过esp扩大栈空间</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。博主QQ：522796871遇到一个修改esp扩大栈空间的题目跟大家分享一下：程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-04-13
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/PWM/" class="post-category" target="_blank">
-                                    PWM
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn入门/" target="_blank">
-                            <span class="chip bg-color">pwn入门</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/04/06/linux-zhan-yi-chu-wu-bao-hu/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/7.jpg" class="responsive-img" alt="linux-栈溢出-无保护">
-                            
-                            <span class="card-title">linux-栈溢出-无保护</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                首先我们先介绍一下栈溢出的基本原理：
-    栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。
-
-PS：这一次比赛中遇到的简单题目，也是我做
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-04-06
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/PWM/" class="post-category" target="_blank">
-                                    PWM
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn入门/" target="_blank">
-                            <span class="chip bg-color">pwn入门</span>
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
                         </a>
                         
                     </div>
@@ -668,7 +611,7 @@ PS：这一次比赛中遇到的简单题目，也是我做
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">2.4k</span>
+                <span class="white-color">3.8k</span>
             
 
             

