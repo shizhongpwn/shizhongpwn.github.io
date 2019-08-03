@@ -4,12 +4,13 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="heap UAF hacknote, 时钟">
-    <meta name="description" content="这个题目有问题，但是重要的是利用思想：可以把源码贴出来帮助理解：
-#include&amp;lt;stdio.h&amp;gt;
-#include&amp;lt;stdlib.h&amp;gt;
-#include&amp;lt;string.h&amp;gt;
-#include&amp;lt;u">
+    <meta name="keywords" content="stack cookie探索, 时钟">
+    <meta name="description" content="stack cookie的两种讲法
+
+windows平台上叫 /GS:cookie
+linux上叫Stack Canary
+
+它的原理就是在ebp+4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -17,7 +18,7 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>heap UAF hacknote | 时钟</title>
+    <title>stack cookie探索 | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -243,13 +244,13 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/21.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/20.jpg')">
     <div class="container">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
                     <div class="description center-align post-title">
-                        heap UAF hacknote
+                        stack cookie探索
                     </div>
                 </div>
             </div>
@@ -372,8 +373,8 @@
                     <div class="post-cate">
                         <i class="fa fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                CTF题解
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                漏洞利用
                             </a>
                         
                     </div>
@@ -391,14 +392,14 @@
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        393
+                        971
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        1 分
+                        3 分
                     </div>
                     
                 
@@ -414,63 +415,40 @@
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <p>这个题目有问题，但是重要的是利用思想：可以把源码贴出来帮助理解：</p>
-<pre><code>#include&lt;stdio.h&gt;
-#include&lt;stdlib.h&gt;
-#include&lt;string.h&gt;
-#include&lt;unistd.h&gt;
-char buf[128];  /*值得注意的是这几个全局变量在bss段是紧挨着排列的*/
-char *ptr[8];
-char *cmd;    //fake_chunk要把这个包含进去，这样的话就可以利用fgets实现任意地址写入
-int size;
-int n = 0;
-void sh(char *c)
-{
-    system(c);
-}
-int main()
-{
-    setvbuf(stdout,0,_IONBF,0);
-    memset(ptr,0,sizeof(ptr));
-    cmd = buf;
-    while(1)
-    {
-        fgets(cmd,sizeof(buf),stdin);
-        if(!strncmp(cmd,&quot;push&quot;,4))   //strncmp意思是只比较前4个
-        {
-            if(n&lt;8)
-            {
-                scanf(&quot;%d%*c&quot;,&amp;size);   //这里可以写入size 进而伪造next_chunk_size
-                ptr[n] = malloc(size);
-                fgets(ptr[n],size,stdin);
-                n++;
-            }
-            else
-            {
-                puts(&quot;stack is full&quot;);
-            }
-        }
-            else if(!strncmp(cmd,&quot;pop&quot;,3))
-            {
-                if(n&gt;=0)
-                {
-                    n--;
-                    puts(ptr[n]);
-                    free(ptr[n]);
-                    ptr[n] = 0;
-                }
-                else
-                {
-                    puts(&quot;stack is empty&quot;);
-                }
-            }
-            else{
-                puts(&quot;unkonwn command&quot;);
-            }
-        }
-    }
-
-</code></pre><p>file得知是64位动态链接程序，那么看看ida分析   （push指针共有8个，图里面写错了）<br><img src="/2019/08/03/heap-uaf-hacknote/Image.png" title="This is an image"><br>那么我们的第一步就是伪造chunk ，这一点需要注意的就是地址要16位对齐，否则free的时候无法绕过检查，我们可以把size写入为next_chunk_size来躲过检查，然后把伪造的chunk free掉，然后就是malloc写入把cmd给溢出指向fgets@got，然后fgets把strncmp@got给覆盖了（因为下一个执行的就是strncmp,然后fgets@got的最后2个byte地方可以放参数/bin/sh,其它的可以用00填充 ），下次调用就直接getshell</p>
+                <p>stack cookie的两种讲法</p>
+<ul>
+<li>windows平台上叫 /GS:cookie</li>
+<li>linux上叫Stack Canary</li>
+</ul>
+<p>它的原理就是在ebp+4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时候会调用另一个函数去检查这个值是否被修改，如果被修改了的话就终止程序，这就使得经典栈溢出的手法难以奏效</p>
+<ul>
+<li>首先在windows平台上，在vs编译的时候有那个安全选项可以加上，然后在调试的时候就直接看函数，我们会发现在以前的经典的push ebp   mov ebp esp , sub esp , 88h这些之后呢，还会有一个mov eax , dword prt [stack_overflow_gs!_security_cookie(00416000)]            xor eax,ebp 这样类似的东西，这个其实就是添加一个随机数进去，然后在程序的结束部分还有一个对应的操作 mov ecx,doword prt [ebp-4]   xor ecx,ebp  call stack_overflow_gs!ILT_25(_security_check_cookie)(00416000)这类操作（具体代码可能不一样但是都是这个意思）</li>
+<li>下面详细说一下：</li>
+<li><p>调试可以发现那个cookie的初始值0041600其实就是.data段的起始地方，在程序运行得时候这里面是个随机数字，但是你在原始文件的PE里面可以看，.data段的值不是全部一样的，为啥呢？其实是在start函数后的有一个_mainCRTStartup的一个库启动的时候有一个函数调用__security_init_cookie 下面是ida里面的情况</p>
+<img src="/2019/08/03/stack-cookie-tan-suo/1.png" title="This is an image">
+<p>我们可以看出cookie的值有一套自己的计算逻辑，基本上是以系统时间，进程id,性能计数器等作为可变元</p>
+</li>
+<li><p>stack_overflow_gs!ILT_25(_security_check_cookie)这个函数做了什么？  其实里面就是一个cmp 的比较不相等的话跳到函数里面的另一个函数里（这个函数就是终止程序啦，反馈信息了，这么一些个操作），OK   windows上差不多就这些。</p>
+</li>
+</ul>
+<p>下面这个讲linux上的cookie，这个是当前时期的重点：</p>
+<ul>
+<li><p>首先它跟windows第一点的不同就是代码顺序</p>
+<img src="/2019/08/03/stack-cookie-tan-suo/2.png" title="This is an image">
+</li>
+<li><p>它这个其实是在栈开辟完成后进行的一盘操作而且我们也看到了，这个canary的位置是在ebp - 0xc的位置，然后要知道的一点就是cookie的初始化是在glibc里面进行的，但是不要认为cookie是glibc生成的，其实是内核给的glibc</p>
+</li>
+<li>然后还是最后有个检查嘛</li>
+<li><img src="/2019/08/03/stack-cookie-tan-suo/3.png" title="This is an image">
+</li>
+</ul>
+<p>下面最最重要的当然是破解手法了：</p>
+<ol>
+<li>其一肯定是暴力破解cookie值，但是这个应用场景有限，你要是没啥前提条件单纯的跑程序的话，cookie的值每次都会变，估计你就呵呵呵了，那么，这个前提条件就是子进程存在栈溢出漏洞（linux上子进程跟父进程之间关系严格）这个意思就是子进程无限的fork，因为在这个时候它的哪个cookie事实上是继承的父进程的cookie，那么父进程fork的时候给子进程的cookie都是哪一个，那么你就暴力破解吧。</li>
+<li>leak info(OOB read，file log)  意思就是程序还存在其他漏洞，想越界读取啊 ， 格式化字符串啊， 其他的一些输出函数啊 ，那么我们调整一些参数，利用这些漏洞可以得到Cookie的值啊。</li>
+<li>迂回绕过，这意思就是我们可以避开cookie的检查（例如我们可以不修改你的ebp , ret_addr，我们就简单的修改你的局部变量来改变程序流程）</li>
+<li>这个就是我们既然得不到cookie, 那么意思就是__stack_chk_fial@plt这个函数非要执行不可了，那我们可以把这个函数给got劫持了，把它里面.got.plt那个地址改成我们shellcode的地址。</li>
+</ol>
 
             </div>
             <hr>
@@ -502,9 +480,9 @@ int main()
             </div>
             <br>
             <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
-                    《heap UAF hacknote》
+                    《stack cookie探索》
                 </span> 由
-            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/08/03/heap-uaf-hacknote/" property="cc:attributionName" rel="cc:attributionURL">
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/08/03/stack-cookie-tan-suo/" property="cc:attributionName" rel="cc:attributionURL">
                 时钟
             </a> 采用
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
@@ -545,16 +523,15 @@ int main()
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
-            </div>
+                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/2019/08/03/heap-uaf-hacknote/">
+                <a href="/2019/08/03/64-wei-house-of-spirit/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/21.jpg" class="responsive-img" alt="heap UAF hacknote">
+                        <img src="/medias/featureimages/19.jpg" class="responsive-img" alt="64位 house of spirit">
                         
-                        <span class="card-title">heap UAF hacknote</span>
+                        <span class="card-title">64位 house of spirit</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -568,22 +545,21 @@ int main()
                         
                     </div>
                     <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
-                            </span>
+                        <span class="publish-date">
+                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
+                        </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                    CTF题解
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
                                 </a>
                             
                             
                         </span>
                     </div>
                 </div>
-
                 
                 <div class="card-action article-tags">
                     
@@ -798,7 +774,7 @@ free检查会看size的低字节flag的IS_
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">5.9k</span>
+                <span class="white-color">6.9k</span>
             
 
             

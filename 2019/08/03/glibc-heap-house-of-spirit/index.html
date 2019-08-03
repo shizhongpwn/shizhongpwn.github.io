@@ -557,23 +557,24 @@ free检查会看size的低字节flag的IS_">
             <div class="article-badge left-badge text-color">
                 <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/2019/08/03/heap-uaf-hacknote/">
+                <a href="/2019/08/03/stack-cookie-tan-suo/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/21.jpg" class="responsive-img" alt="heap UAF hacknote">
+                        <img src="/medias/featureimages/20.jpg" class="responsive-img" alt="stack cookie探索">
                         
-                        <span class="card-title">heap UAF hacknote</span>
+                        <span class="card-title">stack cookie探索</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            这个题目有问题，但是重要的是利用思想：可以把源码贴出来帮助理解：
-#include&lt;stdio.h&gt;
-#include&lt;stdlib.h&gt;
-#include&lt;string.h&gt;
-#include&lt;u
+                            stack cookie的两种讲法
+
+windows平台上叫 /GS:cookie
+linux上叫Stack Canary
+
+它的原理就是在ebp+4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时
                         
                     </div>
                     <div class="publish-info">
@@ -584,8 +585,8 @@ free检查会看size的低字节flag的IS_">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                    CTF题解
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
                                 </a>
                             
                             
@@ -804,7 +805,7 @@ MSVBVM50.rtcMsgBox  \\调
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">5.9k</span>
+                <span class="white-color">6.9k</span>
             
 
             
