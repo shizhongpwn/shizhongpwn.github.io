@@ -4,6 +4,56 @@
   
     
     <entry>
+      <title>heap UAF hacknote</title>
+      <link href="/2019/08/03/heap-uaf-hacknote/"/>
+      <url>/2019/08/03/heap-uaf-hacknote/</url>
+      
+        <content type="html"><![CDATA[<p>这个题目有问题，但是重要的是利用思想：可以把源码贴出来帮助理解：</p><pre><code>#include&lt;stdio.h&gt;#include&lt;stdlib.h&gt;#include&lt;string.h&gt;#include&lt;unistd.h&gt;char buf[128];  /*值得注意的是这几个全局变量在bss段是紧挨着排列的*/char *ptr[8];char *cmd;    //fake_chunk要把这个包含进去，这样的话就可以利用fgets实现任意地址写入int size;int n = 0;void sh(char *c){    system(c);}int main(){    setvbuf(stdout,0,_IONBF,0);    memset(ptr,0,sizeof(ptr));    cmd = buf;    while(1)    {        fgets(cmd,sizeof(buf),stdin);        if(!strncmp(cmd,&quot;push&quot;,4))   //strncmp意思是只比较前4个        {            if(n&lt;8)            {                scanf(&quot;%d%*c&quot;,&amp;size);   //这里可以写入size 进而伪造next_chunk_size                ptr[n] = malloc(size);                fgets(ptr[n],size,stdin);                n++;            }            else            {                puts(&quot;stack is full&quot;);            }        }            else if(!strncmp(cmd,&quot;pop&quot;,3))            {                if(n&gt;=0)                {                    n--;                    puts(ptr[n]);                    free(ptr[n]);                    ptr[n] = 0;                }                else                {                    puts(&quot;stack is empty&quot;);                }            }            else{                puts(&quot;unkonwn command&quot;);            }        }    }</code></pre><p>file得知是64位动态链接程序，那么看看ida分析   （push指针共有8个，图里面写错了）<br><img src="/2019/08/03/heap-uaf-hacknote/Image.png" title="This is an image"><br>那么我们的第一步就是伪造chunk ，这一点需要注意的就是地址要16位对齐，否则free的时候无法绕过检查，我们可以把size写入为next_chunk_size来躲过检查，然后把伪造的chunk free掉，然后就是malloc写入把cmd给溢出指向fgets@got，然后fgets把strncmp@got给覆盖了（因为下一个执行的就是strncmp,然后fgets@got的最后2个byte地方可以放参数/bin/sh,其它的可以用00填充 ），下次调用就直接getshell</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> CTF题解 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> pwn </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>glibc heap House of Spirit</title>
+      <link href="/2019/08/03/glibc-heap-house-of-spirit/"/>
+      <url>/2019/08/03/glibc-heap-house-of-spirit/</url>
+      
+        <content type="html"><![CDATA[<p>这个技术也是针对于fastbin，属于fastbin_attack的一种。<br>关键：目标位置伪造fastbin chunk并将其释放，进而实现在指定地址分配chunk</p><p>关于free时候的检查：</p><ul><li>free检查会看size的低字节flag的IS_MMAP标志位，M标志位没有被置1才会绕过检查，否则就会调用munmap_chunk函数去释放堆块</li></ul><p>1.free的chunk的size不可以太离谱，不要太大太小，并且chunk要对齐</p><pre><code>       if (__builtin_expect((uintptr_t)p &gt; (uintptr_t)-size, 0)               || __builtin_expect(misaligned_chunk(p), 0))               malloc_printerr(&quot;free(): invalid pointer&quot;);        /* We know that each chunk is at least MINSIZE bytes in size or a           multiple of MALLOC_ALIGNMENT.  */        if (__glibc_unlikely(size &lt; MINSIZE || !aligned_OK(size)))               malloc_printerr(&quot;free(): invalid size&quot;);</code></pre><p>2.free的时候也会检查当前Chunk的下一个chunk，也是不能太小不能太大（大于2*SIZE_SZ小于system_mem）其中SIZE_SZ在32位上是4，64位上是8</p><pre><code>if (__builtin_expect(chunksize_nomask(chunk_at_offset(p, size))                       &lt;= 2 * SIZE_SZ, 0)                       || __builtin_expect(chunksize(chunk_at_offset(p, size))                              &gt;= av-&gt;system_mem, 0))</code></pre><p>检查绕过：</p><ul><li>fake chunk 的ISMMAP位不能是1 ，因为free的时候如果 是mmap的话 会被单独 处理</li><li>fake chunk 的地址需要对齐</li><li>fake chunk的size大小满足fastbin，并且对齐</li><li>fake chunk的size大小不能小于2*SIZE_SZ（4或者8），同时不能大于av-&gt;system_mem。</li><li>fake chunk对应的fastbin链表头部不能是该fake chunk，即是不能构成double free的情形</li></ul><p>利用条件：</p><ol><li>想要控制的区域的前段空间和后端空间都是内存可控的<br> 1.我们想要控制的目标内存一般是返回地址或者函数指针 ，这个应该属于.text段，所以一般情况下这段内存是我们的输入无法控制的，就是我们控制不了的意思。</li></ol><p>2.存在可将堆变量指针覆盖指向为可控区域，即上一步中的区域</p><p>how2heap里面的相关源码我们可以看一下：</p><pre><code>配出来的时候，就有可能改写我们目标区域。还是像以前一样，先上一段代码给大家一个直观印象再具体解释，这段代码是shellfish的github里面的源码。  #include &lt;stdio.h&gt;  #include &lt;stdlib.h&gt;  int main()  {         printf(&quot;This file demonstrates the house of spirit attack.n&quot;);         printf(&quot;Calling malloc() once so that it sets up its memory.n&quot;);         malloc(1);        printf(&quot;We will now overwrite a pointer to point to a fake &#39;fastbin&#39; region.n&quot;);        unsigned long long *a;        unsigned long long fake_chunks[10] __attribute__ ((aligned (16)));        printf(&quot;This region must contain two chunks. The first starts at %p and the second at %p.n&quot;, &amp;fake_chunks[1], &amp;fake_chunks[7]);        printf(&quot;This chunk.size of this region has to be 16 more than the region (to accomodate the chunk data) while still falling into the fastbin category (&lt;= 128). The PREV_INUSE (lsb) bit is ignored by free for fastbin-sized chunks, however the IS_MMAPPED (second lsb) and NON_MAIN_ARENA (third lsb) bits cause problems.n&quot;);        printf(&quot;... note that this has to be the size of the next malloc request rounded to the internal size used by the malloc implementation. E.g. on x64, 0x30-0x38 will all be rounded to 0x40, so they would work for the malloc parameter at the end. n&quot;);        fake_chunks[1] = 0x40; // this is the size        printf(&quot;The chunk.size of the *next* fake region has be above 2*SIZE_SZ (16 on x64) but below av-&gt;system_mem (128kb by default for the main arena) to pass the nextsize integrity checks .n&quot;);        fake_chunks[9] = 0x2240; // nextsize        printf(&quot;Now we will overwrite our pointer with the address of the fake region inside the fake first chunk, %p.n&quot;, &amp;fake_chunks[1]);        printf(&quot;... note that the memory address of the *region* associated with this chunk must be 16-byte aligned.n&quot;);        a = &amp;fake_chunks[2];        printf(&quot;Freeing the overwritten pointer.n&quot;);        free(a);        printf(&quot;Now the next malloc will return the region of our fake chunk at %p, which will be %p!n&quot;, &amp;fake_chunks[1], &amp;fake_chunks[2]);        printf(&quot;malloc(0x30): %pn&quot;, malloc(0x30));}</code></pre><p>解析和思路：</p><ol><li>伪造堆块：在可控区域输入数据进而把它伪造成为一个fastbin</li><li>覆盖堆指针指向上一步伪造的堆块</li><li>释放堆块，讲伪造的堆块释放到fastbin单链表里面</li><li>申请堆块，讲刚释放的堆块申请出来，最终使得可以向目标内存里面写入数据</li></ol>]]></content>
+      
+      
+      <categories>
+          
+          <category> 漏洞利用 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> pwn </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>逆向工程小知识</title>
       <link href="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/"/>
       <url>/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/</url>

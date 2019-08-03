@@ -522,47 +522,47 @@ int main()
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
-            </div>
+                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/">
+                <a href="/2019/08/03/glibc-heap-house-of-spirit/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="逆向工程小知识">
+                        <img src="/medias/featureimages/23.jpg" class="responsive-img" alt="glibc heap House of Spirit">
                         
-                        <span class="card-title">逆向工程小知识</span>
+                        <span class="card-title">glibc heap House of Spirit</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环
-MSVBVM50.rtcMsgBox  \\调
+                            这个技术也是针对于fastbin，属于fastbin_attack的一种。关键：目标位置伪造fastbin chunk并将其释放，进而实现在指定地址分配chunk
+关于free时候的检查：
+
+free检查会看size的低字节flag的IS_
                         
                     </div>
                     <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
-                            </span>
+                        <span class="publish-date">
+                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
+                        </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/逆向工程/" class="post-category" target="_blank">
-                                    逆向工程
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
                                 </a>
                             
                             
                         </span>
                     </div>
                 </div>
-
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/reverse/" target="_blank">
-                        <span class="chip bg-color">reverse</span>
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
                     </a>
                     
                 </div>
@@ -771,7 +771,7 @@ MSVBVM50.rtcMsgBox  \\调
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">4.5k</span>
+                <span class="white-color">5.9k</span>
             
 
             
