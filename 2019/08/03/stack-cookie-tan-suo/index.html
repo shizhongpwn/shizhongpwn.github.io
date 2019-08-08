@@ -10,7 +10,7 @@
 windows平台上叫 /GS:cookie
 linux上叫Stack Canary
 
-它的原理就是在ebp+4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时">
+它的原理就是在ebp-4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -420,7 +420,7 @@ linux上叫Stack Canary
 <li>windows平台上叫 /GS:cookie</li>
 <li>linux上叫Stack Canary</li>
 </ul>
-<p>它的原理就是在ebp+4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时候会调用另一个函数去检查这个值是否被修改，如果被修改了的话就终止程序，这就使得经典栈溢出的手法难以奏效</p>
+<p>它的原理就是在ebp-4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时候会调用另一个函数去检查这个值是否被修改，如果被修改了的话就终止程序，这就使得经典栈溢出的手法难以奏效</p>
 <ul>
 <li>首先在windows平台上，在vs编译的时候有那个安全选项可以加上，然后在调试的时候就直接看函数，我们会发现在以前的经典的push ebp   mov ebp esp , sub esp , 88h这些之后呢，还会有一个mov eax , dword prt [stack_overflow_gs!_security_cookie(00416000)]            xor eax,ebp 这样类似的东西，这个其实就是添加一个随机数进去，然后在程序的结束部分还有一个对应的操作 mov ecx,doword prt [ebp-4]   xor ecx,ebp  call stack_overflow_gs!ILT_25(_security_check_cookie)(00416000)这类操作（具体代码可能不一样但是都是这个意思）</li>
 <li>下面详细说一下：</li>

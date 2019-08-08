@@ -618,7 +618,7 @@ int main()
 windows平台上叫 /GS:cookie
 linux上叫Stack Canary
 
-它的原理就是在ebp+4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时
+它的原理就是在ebp-4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时
                         
                     </div>
                     <div class="publish-info">
