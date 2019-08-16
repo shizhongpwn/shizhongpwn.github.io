@@ -4,6 +4,44 @@
   
     
     <entry>
+      <title>glibc heap Fastbin Corruption</title>
+      <link href="/2019/08/16/glibc-heap-fastbin-corruption/"/>
+      <url>/2019/08/16/glibc-heap-fastbin-corruption/</url>
+      
+        <content type="html"><![CDATA[<p>基础知识：</p><ul><li>fastbin: Chunk Size &lt;= get_max_fast()的chunk（其实就是64bits的是128bytes，32位的是64bytes）  ，它们会被放在被称为fastbin的bin里面</li></ul><img src="/2019/08/16/glibc-heap-fastbin-corruption/1.png" title="This is an image"><p>上面的fastbinsY 里面存放fastbin , 最大是128bytes,最小是32bytes,然后依次加16bytes,32位的类似，不过最大是64bytes</p><ul><li>需要注意的是get_max_fast()事实上返回的是 global_max_fast，但是这个值得初始值为0，只有当第一次malloc之后它才会被赋值为相应的值</li><li>同时fastbin是Single linked list，所以它只使用fd,以NULL结尾</li><li>free的时候呢，不取消下一个chunk 的prev_inuse bit，因为fastbin chunk不会和其他chunk合并</li><li>malloc 和 free的时候glibc会有一些检查，确认heap metadata是否正确，避免一些可能的攻击方式</li><li>fastbin执行效率高，它的里面的检查比其他类型的bin少很多</li><li>fastbin的linklist和其他的相反，跟Stack很像free和malloc的时候先进后出</li><li>fastbin的prev_inuse标志位在free的时候不会改变还是1，这防止了它和其他的free_chunk进行合并操作</li></ul><p>Fastbin Corruption：</p><pre><code>1..让fastbin linked list 指向任意位置，之后的malloc时就会把改地址当做chunk拿出来 2.free（not in_use）的chunk会被存在bin里面，修改它的fd才会造成corruption    1.double free    2.Over flow</code></pre><p>fastbin的检查方式：</p><ul><li>malloc从bin里面取出chunk,要拿到合适大小的chunk（检查你这个chunk的chunk_size</li><li>free的时候，next_chunk的size必须正确（overflow的时候才会用到）</li><li>free时看看bin里面的第一个chunk和现在要free的是不是同一个（fasttop），这个的缺点就是它只和第一个检查，那么你可以在double free之前先free一个其他的大小合适的chunk</li></ul><p>我们可以看源码了解一下（源码我会的不多，只说点关键的）<br>对应1：</p><pre><code>    //这个nb是chunk的bytes 它来源于上面的一个checked_request2size(bytes,nb) 这的作用就是malloc的bytes+8然后16对齐        if ((unsigned long)(nb) &lt;= (unsigned long)(get_max_fast()))   //chunk的size(nb)小于128 or 64的话就会执行下面        {               idx = fastbin_index(nb);     //这是在fastbin里面找，把chunk的size转换成fastbin里面对应的哪一个（size/16-2）注意：0是fastbin的第一个               mfastbinptr *fb = &amp;fastbin(av, idx);               mchunkptr pp;               victim = *fb;               if (victim != NULL)               {                       if (SINGLE_THREAD_P)                              *fb = victim-&gt;fd;                       else                              REMOVE_FB(fb, pp, victim);                       if (__glibc_likely(victim != NULL))                       {                              size_t victim_idx = fastbin_index(chunksize(victim));   //victim是要等一下要return的chunk                              if (__builtin_expect(victim_idx != idx, 0))      //这边就是在检查你拿出来的chunk的idx跟bin的idx是不是一样，不对的话error                                      malloc_printerr(&quot;malloc(): memory corruption  (fast)&quot;);</code></pre><p>对应2：</p><pre><code>               if (SINGLE_THREAD_P)               {                       /* Check that the top of the bin is not the record we are going to                          add (i.e., double free).  */                       if (__builtin_expect(old == p, 0))   //这个检查就是看看你free的chunk跟bin里面的chunk是不是同一个，同一个的话就error                              malloc_printerr(&quot;double free or corruption (fasttop)&quot;);                       p-&gt;fd = old;                       *fb = p;               }</code></pre><p>double free也会形成类似UAF的效果，可以改掉bin里面的chunk的fd，可以看一下调试截图和源码</p><pre><code>int main(){    void *p,*q,*r,*s;    p = malloc(30);    q = malloc(30);    free(q);    free(p);    free(q); 第一次断点下在这里}</code></pre><img src="/2019/08/16/glibc-heap-fastbin-corruption/2.png" title="This is an image"><img src="/2019/08/16/glibc-heap-fastbin-corruption/3.png" title="This is an image"><img src="/2019/08/16/glibc-heap-fastbin-corruption/4.png" title="This is an image"><p>更重要的是，现在bin里面有两个q（其实是同一块）都指向了P，<br>利用姿势注意点：</p><ol><li><p>取出的chunk 的size要正确，所以也不是任意地址，需要可以制作假的size</p><ol><li>stack上的变量做size ，可以malloc出一个stack上的位置  （可以制作stack上的overflow）</li><li>got上，用64bits地址常见的0x40（这个got没被call过的话）做size</li></ol></li><li><p>取得chunk后，有机会对改地址任意写</p></li></ol><p>fastbin double free:</p><ol><li>fasttop只检查bin里面的第一个chunk,只要不是连续free同一个chunk就没关系</li><li>double free有类似use after free的效果，可以改掉bin里面的chunk的fd</li></ol><p>例子：</p><pre><code>#include&lt;stdio.h&gt;#include&lt;string.h&gt;#include&lt;stdlib.h&gt;void sh(char *cmd){    system(cmd);}int main(){    setvbuf(stdout,0,_IONBF,0);    int cmd,idx,sz;    char *ptr[10];    memset(ptr,0,sizeof(ptr));    puts(&quot;1. malloc + gets\n2. free\n3. puts&quot;);    while(1)    {        printf(&quot;&gt; &quot;);        scanf(&quot;%d %d&quot;,&amp;cmd, &amp;idx);        idx %= 10;        if(cmd==1)        {            scanf(&quot;%d%*c&quot;,&amp;sz);            ptr[idx] = malloc(sz);            gets(ptr[idx]);        }        else if(cmd==2)        {            free(ptr[idx]);        }        else if(cmd==3)        {            puts(ptr[idx]);        }        else        {            exit(0);        }    }    return 0;}</code></pre><p>在64位机器上这个题目有个经典的手法来必过fastbin的检查，因为malloc必须要拿到合适的chunk,所以你malloc的chunk的size位必须要跟fastbin里面的chunk的size大小相同，我们可以在构造fastbin的时候用到了double free,这个操作就是先随便malloc2个大小一样的chunk p和q（必须是fastbin的大小）,我们一次free p q p，那么就会绕过一个fastbin检测，同时这个double free也会形成一个类似环状的fastbin<br><img src="/2019/08/16/glibc-heap-fastbin-corruption/5.png" title="This is an image"><br>那么在malloc的时候，如果从这个bin里面获取chunk的话，我们就可以通过三次malloc，两次使用chunk p,这样就可以利用gets实现有限制的地址写入，这个限制就来源于chunk大小检查，同样我们可以利用64位机器好多都是0x40,来将malloc的chunk p利用gets修改到got表的相应位置，那么第三次malloc就会把这个地址的内存当做一个chunk来取出来，进行gets，我们写入shell的地址，那么下次调用got表相应函数的时候就直接getshell</p>]]></content>
+      
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>Chunk Extend and Overlapping</title>
+      <link href="/2019/08/16/chunk-extend-and-overlapping/"/>
+      <url>/2019/08/16/chunk-extend-and-overlapping/</url>
+      
+        <content type="html"><![CDATA[<p>chunk extend 堆利用：<br>    程序中堆的利用 可以控制chunk header中的数据 例如：heap overflow<br>ptmalloc 对chunk 操作的存在漏洞。</p><p>首先：怎么获取chunk的大小？</p><pre><code>/* Get size, ignoring use bits */#define chunksize(p) (chunksize_nomask(p) &amp; ~(SIZE_BITS))/* Like chunksize, but do not mask SIZE_BITS.  */#define chunksize_nomask(p) ((p)-&gt;mchunk_size)</code></pre><p>其实就是利用了size , 但是一种忽略了掩码部分，一种没有。</p><p>那么怎么获取下一个chunk的位置？<br>这个其实就是利用了隐式链表的技术</p><pre><code>/* Ptr to next physical malloc_chunk. */#define next_chunk(p) ((mchunkptr)(((char *) (p)) + chunksize(p)))</code></pre><p>就是当前块指针加上当前块的大小。</p><p>那么有关前一个chunk的信息呢？<br>答案还在malloc_chunk的结构体里面，</p><pre><code>/* Size of the chunk below P.  Only valid if prev_inuse (P).  */#define prev_size(p) ((p)-&gt;mchunk_prev_size)/* Ptr to previous physical malloc_chunk.  Only valid if prev_inuse (P).  */#define prev_chunk(p) ((mchunkptr)(((char *) (p)) - prev_size(p)))</code></pre><p>但是这一点的时候要特别注意malloc 和free两种不同的状态。<br>上面简单就是用本chunk - malloc_chunk-&gt;prev_size<br>那么判断是否处于in_use状态就是依靠in_use标志位了</p><pre><code>#define inuse(p)    ((((mchunkptr)(((char *) (p)) + chunksize(p)))-&gt;mchunk_size) &amp; PREV_INUSE)</code></pre><p>记住一点：本chunk的 in_use表示的是前一个chunk的状态哦。<br>综合起来chunk的判断 就是依赖于malloc_chunk结构体里面的内容，简单来说就是chunk_header<br>,那么利用思路就自然而然的出来了，我们通过堆漏洞（heap overflow之类的）可以改变chunk_header进而实现漏洞利用</p><p>下面来几个简单的实操：<br>    1.在fastbin 里面的操作：</p><pre><code>/*************************************************************************    &gt; File Name: chunk_extend.c    &gt; Author: 时钟    &gt; Mail: 522796871@qq.com    &gt; Created Time: 2019年08月16日 星期五 11时30分15秒 ************************************************************************/#include&lt;stdio.h&gt;#include&lt;stdlib.h&gt;int main(){    void *p , *c;    p = malloc(0x10);    malloc(0x10);    *(long long*)((long long)p-0x8) = 0x41;    free(p);    c = malloc(0x32);    return 0;}</code></pre><p>当我们free之后：<br><img src="/2019/08/16/chunk-extend-and-overlapping/1.png" title="This is an image"><br>这接下来的malloc 就可以成功的控制下面的malloc ， 相当于两个指针可以操作同一个chunk了哦。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 漏洞利用 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> pwn </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>64位 house of spirit</title>
       <link href="/2019/08/03/64-wei-house-of-spirit/"/>
       <url>/2019/08/03/64-wei-house-of-spirit/</url>
