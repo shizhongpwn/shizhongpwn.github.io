@@ -5,11 +5,11 @@
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
     <meta name="keywords" content="2019第五空间pwn题解, 时钟">
-    <meta name="description" content="於讴：首先是一个简单的逆向分析只要大于或等于1000即可，接下来就是一个很简单的栈溢出的ROP利用：
+    <meta name="description" content="於讴首先是一个简单的逆向分析只要大于或等于1000即可，接下来就是一个很简单的栈溢出的ROP利用：
 #!/usr/bin/env python
 # coding=utf-8
 from pwn import *
-from LibcSearc">
+from LibcSearch">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -414,7 +414,7 @@ from LibcSearc">
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h3 id="於讴："><a href="#於讴：" class="headerlink" title="於讴："></a>於讴：</h3><p>首先是一个简单的逆向分析<br><img src="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/1.png" title="This is an image"><br>只要大于或等于1000即可，接下来就是一个很简单的栈溢出的ROP利用：</p>
+                <h3 id="於讴"><a href="#於讴" class="headerlink" title="於讴"></a>於讴</h3><p>首先是一个简单的逆向分析<br><img src="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/1.png" title="This is an image"><br>只要大于或等于1000即可，接下来就是一个很简单的栈溢出的ROP利用：</p>
 <pre><code>#!/usr/bin/env python
 # coding=utf-8
 from pwn import *
@@ -455,7 +455,7 @@ r.recvuntil(&#39;OH, WHY ARE YOU SO GOOD?\n&#39;)
 r.sendline(payload2)
 r.interactive()
 
-</code></pre><h3 id="副墨："><a href="#副墨：" class="headerlink" title="副墨："></a>副墨：</h3><p>这个题目保护全开，属实是有点夸张的，但是漏洞也是比较明显吧？<br>首先见面的就是一个伪随机数的碰撞，然后我不得不吐槽一下了，题目给了格式化字符串漏洞，我们可以泄露canary 同时破解pie的保护，但是坑逼的是题目里面的system函数竟然没给’/bin/sh’字符串，而且泄露的时候不知道为啥，最多泄露的长度就是2个’%p’，那就坑逼了，你要重复泄露两次，一次拿到canary + codebase  一次拿到 一个函数的实际地址来泄露libc 进而得到libc里面的 ‘/bin/sh’字符串 。。。属实是需要很长时间的。。。。（我坑逼的调试了一整个下午。。。）<br>值得注意的是：LibcSearcher碰撞出来的libc不全是对的，要换着多执行几次脚本才能getshell啊！</p>
+</code></pre><h3 id="副墨"><a href="#副墨" class="headerlink" title="副墨"></a>副墨</h3><p>这个题目保护全开，属实是有点夸张的，但是漏洞也是比较明显吧？<br>首先见面的就是一个伪随机数的碰撞，然后我不得不吐槽一下了，题目给了格式化字符串漏洞，我们可以泄露canary 同时破解pie的保护，但是坑逼的是题目里面的system函数竟然没给’/bin/sh’字符串，而且泄露的时候不知道为啥，最多泄露的长度就是2个’%p’，那就坑逼了，你要重复泄露两次，一次拿到canary + codebase  一次拿到 一个函数的实际地址来泄露libc 进而得到libc里面的 ‘/bin/sh’字符串 。。。属实是需要很长时间的。。。。（我坑逼的调试了一整个下午。。。）<br>值得注意的是：LibcSearcher碰撞出来的libc不全是对的，要换着多执行几次脚本才能getshell啊！</p>
 <pre><code>#!/usr/bin/env python
 # coding=utf-8
 from pwn import *
@@ -706,11 +706,11 @@ r.interactive()
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            於讴：首先是一个简单的逆向分析只要大于或等于1000即可，接下来就是一个很简单的栈溢出的ROP利用：
+                            於讴首先是一个简单的逆向分析只要大于或等于1000即可，接下来就是一个很简单的栈溢出的ROP利用：
 #!/usr/bin/env python
 # coding=utf-8
 from pwn import *
-from LibcSearc
+from LibcSearch
                         
                     </div>
                     <div class="publish-info">
