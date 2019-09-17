@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>汇编知识点</title>
+      <link href="/2019/09/17/hui-bian-zhi-shi-dian/"/>
+      <url>/2019/09/17/hui-bian-zhi-shi-dian/</url>
+      
+        <content type="html"><![CDATA[<h4 id="汇编中补码转换"><a href="#汇编中补码转换" class="headerlink" title="汇编中补码转换"></a>汇编中补码转换</h4><p>1.补码可以先减1，然后按位取反。<br>2.从右往左遇见第一个1不变，然后向左按位取反（符号位除外）<br>3.对于16进制数 ：取反的方法就是用15减去改数字中的每一位 ：<br>6A3D –&gt; 95C2+1 –&gt; 95C3 （这只是个例子，正数的话补码和源码相等）</p><h4 id="大小端"><a href="#大小端" class="headerlink" title="大小端"></a>大小端</h4><p>大小端存储对应的是存储器，在寄存器里面没有大小端存储这一说。</p><h4 id="取反"><a href="#取反" class="headerlink" title="取反"></a>取反</h4><p>16进制数字取反的方法就是用15减去该数字</p><h4 id="正负数判断"><a href="#正负数判断" class="headerlink" title="正负数判断"></a>正负数判断</h4><p>16进制的补码最高位&gt;=8的话就是负数，否则是整数<br>但是记住，计算机中正数的补码，反码，源码，相同。</p><h4 id="汇编指令"><a href="#汇编指令" class="headerlink" title="汇编指令"></a>汇编指令</h4><img src="/2019/09/17/hui-bian-zhi-shi-dian/1.png" title="This is an image"><img src="/2019/09/17/hui-bian-zhi-shi-dian/2.png" title="This is an image"><p>XCHG ： 交换指令，内容交换</p><p>ADC  EAX,EBX  –&gt; EAX = EAX + EBX + CF</p><p>INC EAX  –&gt; EAX = EAX + 1</p><p>SBB EAX,EBX –&gt; EAX = EAX - EBX - CF</p><p>NEG:取补指令  NEG(neg)   NEG EAX –&gt; 对操作数取补，就是用0减去改操作数 或者 是按位取反 + 1 ，它的操作数可以是寄存器也可以是存储单元，同时改指令可以影响标志寄存器。如果操作数是0，那么进位标志为0，否则进位标志为1。</p><p>shl   shl eax ,cx  –&gt; 将eax中的二进制数字左移cx位，相当于乘上2的cx次方</p><h4 id="标志状态"><a href="#标志状态" class="headerlink" title="标志状态"></a>标志状态</h4><p>CF : 进位标志，运算结果最高位产生进位或者借位的话 CF 置1，否则CF 清0。</p><p>ZF : 零标志位，运算结果为0，则置1，否则置0</p><p>SF ： 符号标志位，跟运算结果的最高位相同</p><p>OF ： 溢出标志位，反映有符号数是否产生了溢出。 判断：符号位和最高数值位一致则未溢出，否则溢出。</p><p>PF : 奇偶标志位，反映最低一个字节中的含有“1”的位数，偶数则被置1，奇数被置0。</p><p>AF ： 辅助进位标志位 ： 反映在算术运算中第三位是否产生进位或者结尾。或者最低的4位是否有借位或者进位。有则置1，否则置0</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程语言 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 汇编语言 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>2019第五空间pwn题解</title>
       <link href="/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/"/>
       <url>/2019/08/31/2019-di-wu-kong-jian-pwn-ti-jie/</url>
