@@ -4,8 +4,8 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="归档: 2019/11, 时钟">
-    <meta name="description" content="归档: 2019/11 | 时钟">
+    <meta name="keywords" content="归档: 2019, 时钟">
+    <meta name="description" content="归档: 2019 | 时钟">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -13,7 +13,7 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>归档: 2019/11 | 时钟</title>
+    <title>归档: 2019 | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -365,43 +365,46 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
             
             
             <div class="cd-timeline-img month" data-aos="zoom-in-up">
-                <a href="/archives/2019/11">11</a>
+                <a href="/archives/2019/08">08</a>
             </div>
             
 
             
             <div class="cd-timeline-img day" data-aos="zoom-in-up">
-                <span>20</span>
+                <span>02</span>
             </div>
             <article class="cd-timeline-content" data-aos="fade-up">
                 <div class="article col s12 m6">
                     <div class="card">
-                        <a href="/2019/11/20/2019-hu-xiang-bei/">
+                        <a href="/2019/08/02/glibc-heap-unlink-lou-dong/">
                             <div class="card-image">
                                 
                                 
-                                <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="2019湖湘杯">
+                                <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="glibc heap unlink漏洞">
                                 
-                                <span class="card-title">2019湖湘杯</span>
+                                <span class="card-title">glibc heap unlink漏洞</span>
                             </div>
                         </a>
                         <div class="card-content article-content">
                             <div class="summary block-with-text">
                                 
-                                    练习赛一共两个pwn，第一个没啥说的，第二个是个格式化，但是由于格式化之前把握不深导致菜的一批，很感谢ditto师傅能够指点一波，看了师傅的博客，受益匪浅。第一个尴尬点：
-我在泄露的时候泄露出了一个(nil)的神奇东西，本来觉得可能是那些限
+                                    知识点：
+
+free操作会检查前后相邻堆块是否in_use，空闲的话就会进行合并操作
+空闲的堆块一般以双向链表的形式存在（fastbin是单向链表不适用此种攻击）
+unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并操作，那么需
                                 
                             </div>
                             <div class="publish-info">
                                 <span class="publish-date">
-                                    <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-20
+                                    <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
                                 </span>
                                 <span class="publish-author">
                                     
                                     <i class="fa fa-bookmark fa-fw icon-category"></i>
                                     
-                                    <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                    CTF题解
+                                    <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
                                     </a>
                                     
                                     
@@ -413,67 +416,6 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
                         <div class="card-action article-tags">
                             
                             <a href="/tags/pwn/"><span class="chip bg-color">pwn</span></a>
-                            
-                        </div>
-                        
-                    </div>
-                </div>
-            </article>
-        </div>
-        
-        <div class="cd-timeline-block">
-
-            
-            
-
-            
-            
-
-            
-            <div class="cd-timeline-img day" data-aos="zoom-in-up">
-                <span>05</span>
-            </div>
-            <article class="cd-timeline-content" data-aos="fade-up">
-                <div class="article col s12 m6">
-                    <div class="card">
-                        <a href="/2019/11/05/2019i-chun-qiu-da-ti-sai/">
-                            <div class="card-image">
-                                
-                                
-                                <img src="/medias/featureimages/18.jpg" class="responsive-img" alt="2019I春秋答题赛">
-                                
-                                <span class="card-title">2019I春秋答题赛</span>
-                            </div>
-                        </a>
-                        <div class="card-content article-content">
-                            <div class="summary block-with-text">
-                                
-                                    PWN2做出来了两个pwn题目（其中一个是复现出来的。。。。）：首先说一个pwn2，这个题目真是让我张了不少知识，不仅理解了tcache和unsorted bin attack还学会怎么patch elf文件的libc和ld链接器，同时学了
-                                
-                            </div>
-                            <div class="publish-info">
-                                <span class="publish-date">
-                                    <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-05
-                                </span>
-                                <span class="publish-author">
-                                    
-                                    <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                    
-                                    <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                    CTF题解
-                                    </a>
-                                    
-                                    
-                                </span>
-                            </div>
-                        </div>
-
-                        
-                        <div class="card-action article-tags">
-                            
-                            <a href="/tags/pwn/"><span class="chip bg-color">pwn</span></a>
-                            
-                            <a href="/tags/reverse/"><span class="chip bg-color">reverse</span></a>
                             
                         </div>
                         
@@ -485,6 +427,29 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
     </div>
 
 </main>
+
+
+<div class="container paging">
+    <div class="row">
+        <div class="col s6 m4 l4">
+            
+            <a href="/archives/2019/" class="left btn-floating btn-large waves-effect waves-light bg-color">
+                <i class="fa fa-angle-left"></i>
+            </a>
+            
+        </div>
+        <div class="page-info col m4 l4 hide-on-small-only">
+            <div class="center-align b-text-gray">2 / 2</div>
+        </div>
+        <div class="col s6 m4 l4">
+            
+            <a class="right btn-floating btn-large disabled">
+                <i class="fa fa-angle-right"></i>
+            </a>
+            
+        </div>
+    </div>
+</div>
 
 
 <footer class="page-footer bg-color">

