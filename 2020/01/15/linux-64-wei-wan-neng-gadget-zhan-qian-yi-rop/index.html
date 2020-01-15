@@ -5,7 +5,7 @@
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
     <meta name="keywords" content="linux 64位万能gadget &amp; 栈迁移 &amp; rop, 时钟">
-    <meta name="description" content="linux 64位万能gadget &amp;amp; 栈迁移 &amp;amp; rop用一个例题为例子，下面是它的关键函数：最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读入超长数据，自然想">
+    <meta name="description" content="linux 64位万能gadget &amp;amp; 栈迁移 &amp;amp; rop用一个例题(下面有题目链接)为例子，下面是它的关键函数：最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -387,7 +387,7 @@
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        551
+                        570
                     </div>
                     
 
@@ -410,7 +410,7 @@
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h1 id="linux-64位万能gadget-amp-栈迁移-amp-rop"><a href="#linux-64位万能gadget-amp-栈迁移-amp-rop" class="headerlink" title="linux 64位万能gadget &amp; 栈迁移 &amp; rop"></a>linux 64位万能gadget &amp; 栈迁移 &amp; rop</h1><p>用一个例题为例子，下面是它的关键函数：<br><img src="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/1.png" title="This is an image"><br>最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读入超长数据，自然想到了栈迁移，但是我们看下保护。</p>
+                <h1 id="linux-64位万能gadget-amp-栈迁移-amp-rop"><a href="#linux-64位万能gadget-amp-栈迁移-amp-rop" class="headerlink" title="linux 64位万能gadget &amp; 栈迁移 &amp; rop"></a>linux 64位万能gadget &amp; 栈迁移 &amp; rop</h1><p>用一个例题(下面有题目链接)为例子，下面是它的关键函数：<br><img src="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/1.png" title="This is an image"><br>最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读入超长数据，自然想到了栈迁移，但是我们看下保护。</p>
 <pre><code>[*] &#39;/home/root0/pratice/pwn/pwn50&#39;
     Arch:     amd64-64-little
     RELRO:    Partial RELRO
@@ -465,6 +465,7 @@ r<span class="token punctuation">.</span>interactive<span class="token punctuati
 </code></pre>
 <blockquote>
 <p><a href="https://xz.aliyun.com/t/5597" target="_blank" rel="noopener">https://xz.aliyun.com/t/5597</a>   万能gadget<br><a href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/fancy-rop-zh/" target="_blank" rel="noopener">https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/fancy-rop-zh/</a>  栈迁移</p>
+<p>链接：<a href="https://pan.baidu.com/s/1OHPtwBpxynOIOvT1bwYSZw" target="_blank" rel="noopener">https://pan.baidu.com/s/1OHPtwBpxynOIOvT1bwYSZw</a><br>提取码：yxce</p>
 </blockquote>
 
             </div>
@@ -555,7 +556,7 @@ r<span class="token punctuation">.</span>interactive<span class="token punctuati
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            linux 64位万能gadget &amp; 栈迁移 &amp; rop用一个例题为例子，下面是它的关键函数：最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读入超长数据，自然想
+                            linux 64位万能gadget &amp; 栈迁移 &amp; rop用一个例题(下面有题目链接)为例子，下面是它的关键函数：最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读
                         
                     </div>
                     <div class="publish-info">
@@ -787,7 +788,7 @@ babyarm这个题目并不难，难在于它是一个arm的架构，所以难以�
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">17.2k</span>
+                <span class="white-color">17.3k</span>
             
 
             
