@@ -1,0 +1,1785 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+    <meta name="keywords" content="Glibc-2.23-malloc源码审计, 时钟">
+    <meta name="description" content="Glibc-2.23-malloc源码审计
+malloc经常用，但是之前光看了关键代码，没有细读，寒假正好有时间深入学习堆利用，就想着同时深入了解malloc的堆分配机理，glibc-2.23
+
+开头前1000行都是各种注释和定义，可以边看">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Glibc-2.23-malloc源码审计 | 时钟</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="/css/my.css">
+    <style type="text/css">
+        
+    </style>
+
+    <script src="/libs/jquery/jquery-2.2.0.min.js"></script>
+<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css"></head>
+
+
+<body>
+
+<header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">时钟</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fa fa-navicon"></i></a>
+<ul class="right">
+    
+    <li class="hide-on-med-and-down">
+        <a href="/" class="waves-effect waves-light">
+            
+            <i class="fa fa-home"></i>
+            
+            <span>首页</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/tags" class="waves-effect waves-light">
+            
+            <i class="fa fa-tags"></i>
+            
+            <span>标签</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/categories" class="waves-effect waves-light">
+            
+            <i class="fa fa-bookmark"></i>
+            
+            <span>分类</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/archives" class="waves-effect waves-light">
+            
+            <i class="fa fa-archive"></i>
+            
+            <span>归档</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/about" class="waves-effect waves-light">
+            
+            <i class="fa fa-user-circle-o"></i>
+            
+            <span>关于</span>
+        </a>
+    </li>
+    
+    <li>
+        <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+            <i id="searchIcon" class="fa fa-search" title="搜索"></i>
+        </a>
+    </li>
+</ul>
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">时钟</div>
+        <div class="logo-desc">
+            
+            二进制小白进阶之路
+            
+        </div>
+    </div>
+
+    
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li>
+            <a href="/" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-home"></i>
+                
+                首页
+            </a>
+        </li>
+        
+        <li>
+            <a href="/tags" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-tags"></i>
+                
+                标签
+            </a>
+        </li>
+        
+        <li>
+            <a href="/categories" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-bookmark"></i>
+                
+                分类
+            </a>
+        </li>
+        
+        <li>
+            <a href="/archives" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-archive"></i>
+                
+                归档
+            </a>
+        </li>
+        
+        <li>
+            <a href="/about" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-user-circle-o"></i>
+                
+                关于
+            </a>
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/shizhongpwn/pwnstudy" class="waves-effect waves-light" target="_blank">
+                <i class="fa fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #0f9d58;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/shizhongpwn/pwnstudy" class="github-corner tooltipped hide-on-med-and-down" target="_blank" data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewbox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/9.jpg')">
+    <div class="container">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <div class="description center-align post-title">
+                        Glibc-2.23-malloc源码审计
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<main class="post-container content">
+
+    
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+<style>
+    #articleContent h1::before,
+    #articleContent h2::before,
+    #articleContent h3::before,
+    #articleContent h4::before,
+    #articleContent h5::before,
+    #articleContent h6::before {
+        display: block;
+        content: " ";
+        height: 100px;
+        margin-top: -100px;
+        visibility: hidden;
+    }
+
+    #articleContent :focus {
+        outline: none;
+    }
+
+    .toc-fixed {
+        position: fixed;
+        top: 64px;
+    }
+
+    .toc-widget {
+        padding-left: 20px;
+    }
+
+    .toc-widget .toc-title {
+        margin: 35px 0 15px 0;
+        padding-left: 17px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1.5rem;
+    }
+
+    .toc-widget ol {
+        padding: 0;
+        list-style: none;
+    }
+
+    #toc-content ol {
+        padding-left: 10px;
+    }
+
+    #toc-content ol li {
+        padding-left: 10px;
+    }
+
+    #toc-content .toc-link:hover {
+        color: #42b983;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    #toc-content .toc-link::before {
+        background-color: transparent;
+        max-height: 25px;
+    }
+
+    #toc-content .is-active-link {
+        color: #42b983;
+    }
+
+    #toc-content .is-active-link::before {
+        background-color: #42b983;
+    }
+
+    #floating-toc-btn {
+        position: fixed;
+        right: 20px;
+        bottom: 76px;
+        padding-top: 15px;
+        margin-bottom: 0;
+        z-index: 998;
+    }
+
+    #floating-toc-btn .btn-floating {
+        width: 48px;
+        height: 48px;
+    }
+
+    #floating-toc-btn .btn-floating i {
+        line-height: 48px;
+        font-size: 1.4rem;
+    }
+</style>
+<div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/pwn/" target="_blank">
+                                <span class="chip bg-color">pwn</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fa fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                漏洞利用
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                <div class="post-date info-break-policy">
+                    <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2020-01-30
+                </div>
+
+                
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
+                        4.7k
+                    </div>
+                    
+
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                        24 分
+                    </div>
+                    
+                
+				
+				
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="fa fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h1 id="Glibc-2-23-malloc源码审计"><a href="#Glibc-2-23-malloc源码审计" class="headerlink" title="Glibc-2.23-malloc源码审计"></a>Glibc-2.23-malloc源码审计</h1><blockquote>
+<p>malloc经常用，但是之前光看了关键代码，没有细读，寒假正好有时间深入学习堆利用，就想着同时深入了解malloc的堆分配机理，glibc-2.23</p>
+</blockquote>
+<p>开头前1000行都是各种注释和定义，可以边看下面的代码然后对比上面的注释和定义<br>这个是malloc_chunk结构体</p>
+<pre class=" language-c"><code class="language-c"><span class="token keyword">struct</span> malloc_chunk <span class="token punctuation">{</span>
+
+  INTERNAL_SIZE_T      prev_size<span class="token punctuation">;</span>  <span class="token comment" spellcheck="true">/* Size of previous chunk (if free).  */</span>
+  INTERNAL_SIZE_T      size<span class="token punctuation">;</span>       <span class="token comment" spellcheck="true">/* Size in bytes, including overhead. */</span>
+
+  <span class="token keyword">struct</span> malloc_chunk<span class="token operator">*</span> fd<span class="token punctuation">;</span>         <span class="token comment" spellcheck="true">/* double links -- used only if free. */</span>
+  <span class="token keyword">struct</span> malloc_chunk<span class="token operator">*</span> bk<span class="token punctuation">;</span>
+
+  <span class="token comment" spellcheck="true">/* Only used for large blocks: pointer to next larger size.  */</span>
+  <span class="token keyword">struct</span> malloc_chunk<span class="token operator">*</span> fd_nextsize<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">/* double links -- used only if free. */</span>
+  <span class="token keyword">struct</span> malloc_chunk<span class="token operator">*</span> bk_nextsize<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+<p>这又定义了bin的个数，同时也把malloc_chunk结构体指针定义为<strong>mchunkptr</strong><br><img src="/2020/01/30/glibc-2-23-malloc-yuan-ma-shen-ji/image-20200117194803518.png" title="This is an image"></p>
+<p>这里定义了_arena结构体，并赋给了结构体变量arena</p>
+<pre class=" language-c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> _arena <span class="token punctuation">{</span>
+  mbinptr av<span class="token punctuation">[</span><span class="token number">2</span><span class="token operator">*</span>NAV <span class="token operator">+</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token keyword">struct</span> _arena <span class="token operator">*</span>next<span class="token punctuation">;</span>
+  size_t size<span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">if</span> THREAD_STATS</span>
+  <span class="token keyword">long</span> stat_lock_direct<span class="token punctuation">,</span> stat_lock_loop<span class="token punctuation">,</span> stat_lock_wait<span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">endif</span></span>
+  mutex_t mutex<span class="token punctuation">;</span>
+<span class="token punctuation">}</span> arena<span class="token punctuation">;</span>
+</code></pre>
+<p>这里定义了heapinfo结构体</p>
+<pre class=" language-c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> _heap_info <span class="token punctuation">{</span>
+  arena <span class="token operator">*</span>ar_ptr<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">/* Arena for this heap. */</span>
+  <span class="token keyword">struct</span> _heap_info <span class="token operator">*</span>prev<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">/* Previous heap. */</span>
+  size_t size<span class="token punctuation">;</span>   <span class="token comment" spellcheck="true">/* Current size in bytes. */</span>
+  size_t pad<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Make sure the following data is properly aligned. */</span>
+<span class="token punctuation">}</span> heap_info<span class="token punctuation">;</span>
+</code></pre>
+<p>隐式链接的相关定义</p>
+<pre class=" language-c"><code class="language-c"><span class="token comment" spellcheck="true">/* extract p's inuse bit 这里面精彩的利用了逻辑运算*/</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> inuse(p) (next_chunk(p)->size &amp; PREV_INUSE) </span>
+<span class="token comment" spellcheck="true">/* extract inuse bit of previous chunk */</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> prev_inuse(p)  ((p)->size &amp; PREV_INUSE)</span>
+<span class="token comment" spellcheck="true">/* check for mmap()'ed chunk */</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> chunk_is_mmapped(p) ((p)->size &amp; IS_MMAPPED)</span>
+<span class="token comment" spellcheck="true">/* set/clear chunk as in use without otherwise disturbing */</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> set_inuse(p) (next_chunk(p)->size |= PREV_INUSE)</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> clear_inuse(p) (next_chunk(p)->size &amp;= ~PREV_INUSE)</span>
+</code></pre>
+<p>small_bin</p>
+<pre class=" language-c"><code class="language-c"><span class="token macro property">#<span class="token directive keyword">define</span> MAX_SMALLBIN         63 </span><span class="token comment" spellcheck="true">//这个其实最多有62个small_bin</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> MAX_SMALLBIN_SIZE   512</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> SMALLBIN_WIDTH        8</span>
+<span class="token comment" spellcheck="true">/*
+   Requests are `small' if both the corresponding and the next bin are small
+*/</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> is_small_request(nb) ((nb) &lt; MAX_SMALLBIN_SIZE - SMALLBIN_WIDTH)</span>
+</code></pre>
+<p>上面都是一些定义，下面记录一下malloc究竟是一步步怎么走的。<br>首先给出一个实验的小程序：</p>
+<pre><code>/*************************************************************************
+    &gt; File Name: test.c
+    &gt; Author: 时钟
+    &gt; Mail: 522796871@qq.com
+    &gt; Created Time: 2020年01月17日 星期五 19时58分40秒
+ ************************************************************************/
+#include&lt;stdio.h&gt;
+int main()
+{
+    void *ptr1 = malloc(0x10);
+    void *ptr2 = malloc(0x10);
+    return 0;
+}
+</code></pre><p>然后我们观看源码，同时编译glibc进行调试看看在libc内部malloc如何操作：<br><img src="/2020/01/30/glibc-2-23-malloc-yuan-ma-shen-ji/image-20200117200635692.png" title="This is an image"></p>
+<p>可以看出malloc调用的是libc中的__libc_malloc，同时我们看其源码，同时单步运行就可以看出</p>
+<pre class=" language-c"><code class="language-c"><span class="token keyword">void</span> <span class="token operator">*</span>
+<span class="token function">__libc_malloc</span> <span class="token punctuation">(</span>size_t bytes<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+  mstate ar_ptr<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>victim<span class="token punctuation">;</span>
+
+  <span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">(</span><span class="token operator">*</span>hook<span class="token punctuation">)</span> <span class="token punctuation">(</span>size_t<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span>
+    <span class="token operator">=</span> <span class="token function">atomic_forced_read</span> <span class="token punctuation">(</span>__malloc_hook<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span>hook <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token operator">*</span>hook<span class="token punctuation">)</span><span class="token punctuation">(</span>bytes<span class="token punctuation">,</span> <span class="token function">RETURN_ADDRESS</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token function">arena_get</span> <span class="token punctuation">(</span>ar_ptr<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  victim <span class="token operator">=</span> <span class="token function">_int_malloc</span> <span class="token punctuation">(</span>ar_ptr<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment" spellcheck="true">/* Retry with another arena only if we were able to find a usable arena
+     before.  */</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>victim <span class="token operator">&amp;&amp;</span> ar_ptr <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+      <span class="token function">LIBC_PROBE</span> <span class="token punctuation">(</span>memory_malloc_retry<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      ar_ptr <span class="token operator">=</span> <span class="token function">arena_get_retry</span> <span class="token punctuation">(</span>ar_ptr<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      victim <span class="token operator">=</span> <span class="token function">_int_malloc</span> <span class="token punctuation">(</span>ar_ptr<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>ar_ptr <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+    <span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token function">mutex_unlock</span> <span class="token punctuation">(</span><span class="token operator">&amp;</span>ar_ptr<span class="token operator">-></span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token function">assert</span> <span class="token punctuation">(</span><span class="token operator">!</span>victim <span class="token operator">||</span> <span class="token function">chunk_is_mmapped</span> <span class="token punctuation">(</span><span class="token function">mem2chunk</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">||</span>
+          ar_ptr <span class="token operator">==</span> <span class="token function">arena_for_chunk</span> <span class="token punctuation">(</span><span class="token function">mem2chunk</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> victim<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>其中第一个要关注的就是</p>
+<h3 id="malloc-hook"><a href="#malloc-hook" class="headerlink" title="__malloc_hook"></a>__malloc_hook</h3><pre class=" language-c"><code class="language-c"> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span>hook <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token operator">*</span>hook<span class="token punctuation">)</span><span class="token punctuation">(</span>bytes<span class="token punctuation">,</span> <span class="token function">RETURN_ADDRESS</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>我们调试可以看出，malloc在开始的时候就判断<strong>__malloc_hook</strong>中的值是否为NULL，如果不是的话就执行<strong>__malloc_hook</strong>里面的内容，这就是为什么堆利用的时候很多情况下都在实现任意写之后把one_gadget放入到<strong>__malloc_hook_</strong>，同时其实这部分也有一些初始化的作用，不过现在来说不重要。</p>
+<p>当然，实验时<strong>__malloc_hook</strong>里面就是NULL，所以会跳过这一步，继续执行。</p>
+<p>然后就是arena_get了，arena_get作为一个宏定义定义在arena.c中，主要是获取指针，加锁之类的，接下来才是真正重要的：调用_int_malloc,其实<strong>__libc_malloc</strong>主要就是调用的<strong>int_malloc</strong>（改函数源码贼长我就不贴了，分析的时候贴关键部分）</p>
+<img src="/2020/01/30/glibc-2-23-malloc-yuan-ma-shen-ji/image-20200117203733917.png" title="This is an image">
+<p>调试之前先看看源码：</p>
+<h3 id="int-malloc"><a href="#int-malloc" class="headerlink" title="_int_malloc"></a>_int_malloc</h3><pre class=" language-c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token operator">*</span>
+<span class="token function">_int_malloc</span> <span class="token punctuation">(</span>mstate av<span class="token punctuation">,</span> size_t bytes<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+  INTERNAL_SIZE_T nb<span class="token punctuation">;</span>               <span class="token comment" spellcheck="true">/* normalized request size 用户请求的大小*/</span>
+  <span class="token keyword">unsigned</span> <span class="token keyword">int</span> idx<span class="token punctuation">;</span>                 <span class="token comment" spellcheck="true">/* associated bin index bin的索引*/</span>
+  mbinptr bin<span class="token punctuation">;</span>                      <span class="token comment" spellcheck="true">/* associated bin */</span>
+  mchunkptr victim<span class="token punctuation">;</span>                 <span class="token comment" spellcheck="true">/* inspected/selected chunk 由上面我们可以知道这是一个malloc_chunk指针*/</span>
+  INTERNAL_SIZE_T size<span class="token punctuation">;</span>             <span class="token comment" spellcheck="true">/* its size 它的大小*/</span>
+  <span class="token keyword">int</span> victim_index<span class="token punctuation">;</span>                 <span class="token comment" spellcheck="true">/* its bin index 它所在bin的索引*/</span>
+
+  mchunkptr remainder<span class="token punctuation">;</span>              <span class="token comment" spellcheck="true">/* remainder from a split 还是一个malloc_chunk指针*/</span>
+  <span class="token keyword">unsigned</span> <span class="token keyword">long</span> remainder_size<span class="token punctuation">;</span>     <span class="token comment" spellcheck="true">/* its size */</span>
+  <span class="token keyword">unsigned</span> <span class="token keyword">int</span> block<span class="token punctuation">;</span>               <span class="token comment" spellcheck="true">/* bit map traverser */</span>
+  <span class="token keyword">unsigned</span> <span class="token keyword">int</span> bit<span class="token punctuation">;</span>                 <span class="token comment" spellcheck="true">/* bit map traverser */</span>
+  <span class="token keyword">unsigned</span> <span class="token keyword">int</span> map<span class="token punctuation">;</span>                 <span class="token comment" spellcheck="true">/* current word of binmap */</span>
+
+  mchunkptr fwd<span class="token punctuation">;</span>                    <span class="token comment" spellcheck="true">/* misc temp for linking free后的link_list里面的fd指针*/</span>
+  mchunkptr bck<span class="token punctuation">;</span>                    <span class="token comment" spellcheck="true">/* misc temp for linking free后的link_list里面的bc指针*/</span>
+  <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>errstr <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//</span>
+</code></pre>
+<p>首先是一顿声明操作，我给翻译成中文给大家看，然后我们进入该函数<br><img src="/2020/01/30/glibc-2-23-malloc-yuan-ma-shen-ji/image-20200117210204094.png" title="This is an image"></p>
+<p>可以看到第一个操作就是通过对齐和自己申请的size算出合适的chunk大小，这个函数执行完之后nb就是申请出的chunk的大小,bytes在64位时是16,32位时是8。<br><img src="/2020/01/30/glibc-2-23-malloc-yuan-ma-shen-ji/image-20200121124906589.png" title="This is an image"></p>
+<p>至于这里，就是判断arena了，av就是当前的arena，是由上面__libc_malloc里面的arena_get得来的,如果为NULL就会调用sysmalloc通过mmp分配新的可用区域进而获得chunk，很多情况下应该是不会等于NULL的，当然有些利用方式会需要我们人为去消耗点很多堆块进入mmap分配。</p>
+<p>接下来就是重点了。</p>
+<h3 id="fastbin"><a href="#fastbin" class="headerlink" title="fastbin"></a>fastbin</h3><p>通过2.23的源码我们看到,malloc里面关于fastbin的优先级是很高的（2.26引入tcache之后就不是了）。</p>
+<pre class=" language-c"><code class="language-c"><span class="token macro property">#<span class="token directive keyword">define</span> get_max_fast() global_max_fast</span>
+<span class="token keyword">typedef</span> <span class="token keyword">struct</span> malloc_chunk <span class="token operator">*</span>mfastbinptr<span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> fastbin(ar_ptr, idx) ((ar_ptr)->fastbinsY[idx])</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+ <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span> <span class="token operator">&lt;=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token function">get_max_fast</span> <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+      idx <span class="token operator">=</span> <span class="token function">fastbin_index</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//通过chunk_size求出对应的idx</span>
+      mfastbinptr <span class="token operator">*</span>fb <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token function">fastbin</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> idx<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//看上面的typedef 所以fastbin通过av(arena)和idx来找到对应堆块的地址赋给一个malloc_chunk指针</span>
+      mchunkptr pp <span class="token operator">=</span> <span class="token operator">*</span>fb<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//pp指向申请出来的堆块</span>
+      <span class="token keyword">do</span>
+        <span class="token punctuation">{</span>
+          victim <span class="token operator">=</span> pp<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//victim指向申请出来的堆块</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>victim <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+      <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>pp <span class="token operator">=</span> <span class="token function">catomic_compare_and_exchange_val_acq</span> <span class="token punctuation">(</span>fb<span class="token punctuation">,</span> victim<span class="token operator">-></span>fd<span class="token punctuation">,</span> victim<span class="token punctuation">)</span><span class="token punctuation">)</span> 
+             <span class="token operator">!=</span> victim<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment" spellcheck="true">//从刚取出的chunk中将bin链表的表头设置为改chunk的fd。</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>victim <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span><span class="token function">fastbin_index</span> <span class="token punctuation">(</span><span class="token function">chunksize</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> idx<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//idx和chunk_size对应</span>
+            <span class="token punctuation">{</span>
+              errstr <span class="token operator">=</span> <span class="token string">"malloc(): memory corruption (fast)"</span><span class="token punctuation">;</span>
+            errout<span class="token punctuation">:</span>
+              <span class="token function">malloc_printerr</span> <span class="token punctuation">(</span>check_action<span class="token punctuation">,</span> errstr<span class="token punctuation">,</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">,</span> av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+          <span class="token function">check_remalloced_chunk</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//返回一个指向mem区域（意思就是指向fd所在的地方）的指针</span>
+          <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<p>通过宏定义我们就可以知道get_max_fast()其实就是返回一个fastbin的最大值，nb是之前通过申请的size求出来的chunk的真实size.</p>
+<h3 id="small-bin"><a href="#small-bin" class="headerlink" title="small bin"></a>small bin</h3><p>fastbin判断之后就是small bin的判断，其中smallbin在32位机上最大是512，在64位上是1024，源码中也给出了计算方法，可以康康。</p>
+<pre class=" language-c"><code class="language-c"><span class="token macro property">#<span class="token directive keyword">define</span> in_smallbin_range(sz)  \
+  ((unsigned long) (sz) &lt; (unsigned long) MIN_LARGE_SIZE) </span>
+<span class="token macro property">#<span class="token directive keyword">define</span> first(b)     ((b)->fd)</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> last(b)      ((b)->bk)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//判断nb是否在small_bin的范围内</span>
+    <span class="token punctuation">{</span>
+      idx <span class="token operator">=</span> <span class="token function">smallbin_index</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//求出对应的idx</span>
+      bin <span class="token operator">=</span> <span class="token function">bin_at</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> idx<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//根据arena和idx算出所在的bin链表的地址</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>victim <span class="token operator">=</span> <span class="token function">last</span> <span class="token punctuation">(</span>bin<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> bin<span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//取出bin的bk内容</span>
+        <span class="token punctuation">{</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>victim <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">/* initialization check 判断是否初始化如果*/</span>
+            <span class="token function">malloc_consolidate</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//初始化，里面最主要的操作就是check_malloc_state()函数，对malloc_state也就是arena里面的各个内容进行初始化</span>
+          <span class="token keyword">else</span>
+            <span class="token punctuation">{</span>
+              bck <span class="token operator">=</span> victim<span class="token operator">-></span>bk<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//要取出的chunk的bk,其实就是和链表中它紧邻的下一个chunk</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__glibc_unlikely</span> <span class="token punctuation">(</span>bck<span class="token operator">-></span>fd <span class="token operator">!=</span> victim<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//判断取出来的下一个chunk的fd是不是刚才取出的哪个victim,不等于的话就报错</span>
+                <span class="token punctuation">{</span>
+                  errstr <span class="token operator">=</span> <span class="token string">"malloc(): smallbin double linked list corrupted"</span><span class="token punctuation">;</span>
+                  <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+              <span class="token function">set_inuse_bit_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+              bin<span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//恢复链表</span>
+              bck<span class="token operator">-></span>fd <span class="token operator">=</span> bin<span class="token punctuation">;</span>
+
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena<span class="token punctuation">)</span>
+                victim<span class="token operator">-></span>size <span class="token operator">|</span><span class="token operator">=</span> NON_MAIN_ARENA<span class="token punctuation">;</span>
+              <span class="token function">check_malloced_chunk</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//返回mem指针</span>
+              <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+      idx <span class="token operator">=</span> <span class="token function">largebin_index</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//没有合适的就去largebin</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">have_fastchunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token function">malloc_consolidate</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<p>可以看到这里面必须要说一下<strong>malloc_consolidatel()</strong>了</p>
+<h3 id="malloc-consolidate"><a href="#malloc-consolidate" class="headerlink" title="malloc_consolidate"></a>malloc_consolidate</h3><p>其实初始化操作都是在第一次malloc的时候做的奥。</p>
+<pre class=" language-c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">malloc_consolidate</span><span class="token punctuation">(</span>mstate av<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+  mfastbinptr<span class="token operator">*</span>    fb<span class="token punctuation">;</span>                 <span class="token comment" spellcheck="true">/* current fastbin being consolidated */</span>
+  mfastbinptr<span class="token operator">*</span>    maxfb<span class="token punctuation">;</span>              <span class="token comment" spellcheck="true">/* last fastbin (for loop control) */</span>
+  mchunkptr       p<span class="token punctuation">;</span>                  <span class="token comment" spellcheck="true">/* current chunk being consolidated */</span>
+  mchunkptr       nextp<span class="token punctuation">;</span>              <span class="token comment" spellcheck="true">/* next chunk to consolidate */</span>
+  mchunkptr       unsorted_bin<span class="token punctuation">;</span>       <span class="token comment" spellcheck="true">/* bin header */</span>
+  mchunkptr       first_unsorted<span class="token punctuation">;</span>     <span class="token comment" spellcheck="true">/* chunk to link to */</span>
+
+  <span class="token comment" spellcheck="true">/* These have same use as in free() */</span>
+  mchunkptr       nextchunk<span class="token punctuation">;</span>
+  INTERNAL_SIZE_T size<span class="token punctuation">;</span>
+  INTERNAL_SIZE_T nextsize<span class="token punctuation">;</span>
+  INTERNAL_SIZE_T prevsize<span class="token punctuation">;</span>
+  <span class="token keyword">int</span>             nextinuse<span class="token punctuation">;</span>
+  mchunkptr       bck<span class="token punctuation">;</span>
+  mchunkptr       fwd<span class="token punctuation">;</span>
+
+
+  <span class="token comment" spellcheck="true">/*
+    If max_fast is 0, we know that av hasn't
+    yet been initialized, in which case do so below
+  */</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">get_max_fast</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> 
+    <span class="token function">clear_fastchunks</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//标记fastbin中的空闲堆块，其实就是利用异或使得pre_inuse位清0</span>
+
+    unsorted_bin <span class="token operator">=</span> <span class="token function">unsorted_chunks</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//通过arena找到对应的unsorted bin</span>
+
+    <span class="token comment" spellcheck="true">/*
+      Remove each chunk from fast bin and consolidate it, placing it
+      then in unsorted bin. Among other reasons for doing this,
+      placing in unsorted bin avoids needing to calculate actual bins
+      until malloc is sure that chunks aren't immediately going to be
+      reused anyway.
+    */</span>
+
+    maxfb <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token function">fastbin</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> NFASTBINS <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//fastbin里面最大的堆块的malloc_chunk指针</span>
+    fb <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token function">fastbin</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment" spellcheck="true">//fastbin里面最小的堆块的malloc_chunk指针</span>
+    <span class="token keyword">do</span> <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">//从这里开始就是通过循环遍历各种链表置NULL</span>
+      p <span class="token operator">=</span> <span class="token function">atomic_exchange_acq</span> <span class="token punctuation">(</span>fb<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>p <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">do</span> <span class="token punctuation">{</span>
+      <span class="token function">check_inuse_chunk</span><span class="token punctuation">(</span>av<span class="token punctuation">,</span> p<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//名字就很清楚</span>
+      nextp <span class="token operator">=</span> p<span class="token operator">-></span>fd<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//改chunk的fd指针</span>
+
+      <span class="token comment" spellcheck="true">/* Slightly streamlined version of consolidation code in free() */</span>
+      size <span class="token operator">=</span> p<span class="token operator">-></span>size <span class="token operator">&amp;</span> <span class="token operator">~</span><span class="token punctuation">(</span>PREV_INUSE<span class="token operator">|</span>NON_MAIN_ARENA<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      nextchunk <span class="token operator">=</span> <span class="token function">chunk_at_offset</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      nextsize <span class="token operator">=</span> <span class="token function">chunksize</span><span class="token punctuation">(</span>nextchunk<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">prev_inuse</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        prevsize <span class="token operator">=</span> p<span class="token operator">-></span>prev_size<span class="token punctuation">;</span>
+        size <span class="token operator">+</span><span class="token operator">=</span> prevsize<span class="token punctuation">;</span>
+        p <span class="token operator">=</span> <span class="token function">chunk_at_offset</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">long</span><span class="token punctuation">)</span> prevsize<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//隐式链表找到上一个chunk进行unlink操作</span>
+        <span class="token function">unlink</span><span class="token punctuation">(</span>av<span class="token punctuation">,</span> p<span class="token punctuation">,</span> bck<span class="token punctuation">,</span> fwd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>nextchunk <span class="token operator">!=</span> av<span class="token operator">-></span>top<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        nextinuse <span class="token operator">=</span> <span class="token function">inuse_bit_at_offset</span><span class="token punctuation">(</span>nextchunk<span class="token punctuation">,</span> nextsize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>nextinuse<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          size <span class="token operator">+</span><span class="token operator">=</span> nextsize<span class="token punctuation">;</span>
+          <span class="token function">unlink</span><span class="token punctuation">(</span>av<span class="token punctuation">,</span> nextchunk<span class="token punctuation">,</span> bck<span class="token punctuation">,</span> fwd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span>
+          <span class="token function">clear_inuse_bit_at_offset</span><span class="token punctuation">(</span>nextchunk<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        first_unsorted <span class="token operator">=</span> unsorted_bin<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+        unsorted_bin<span class="token operator">-></span>fd <span class="token operator">=</span> p<span class="token punctuation">;</span>
+        first_unsorted<span class="token operator">-></span>bk <span class="token operator">=</span> p<span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          p<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+          p<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token function">set_head</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        p<span class="token operator">-></span>bk <span class="token operator">=</span> unsorted_bin<span class="token punctuation">;</span>
+        p<span class="token operator">-></span>fd <span class="token operator">=</span> first_unsorted<span class="token punctuation">;</span>
+        <span class="token function">set_foot</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+
+      <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        size <span class="token operator">+</span><span class="token operator">=</span> nextsize<span class="token punctuation">;</span>
+        <span class="token function">set_head</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        av<span class="token operator">-></span>top <span class="token operator">=</span> p<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+
+    <span class="token punctuation">}</span> <span class="token keyword">while</span> <span class="token punctuation">(</span> <span class="token punctuation">(</span>p <span class="token operator">=</span> nextp<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">while</span> <span class="token punctuation">(</span>fb<span class="token operator">++</span> <span class="token operator">!=</span> maxfb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token function">malloc_init_state</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">check_malloc_state</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>smallbin中没有合适的就利用largebin_index来计算出一个idx，然后就进去了unsorted bin的判断</p>
+<pre class=" language-c"><code class="language-c">  <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+      idx <span class="token operator">=</span> <span class="token function">largebin_index</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">have_fastchunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment" spellcheck="true">//判断是否初始化</span>
+        <span class="token function">malloc_consolidate</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//arena初始化</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<h3 id="unsorted-bin"><a href="#unsorted-bin" class="headerlink" title="unsorted bin"></a>unsorted bin</h3><pre class=" language-c"><code class="language-c"><span class="token comment" spellcheck="true">//起始部分</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span> <span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+      <span class="token keyword">int</span> iters <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+      <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>victim <span class="token operator">=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token operator">-></span>bk<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//判断unsorted bin里面有没有空闲chunk</span>
+        <span class="token punctuation">{</span>
+          bck <span class="token operator">=</span> victim<span class="token operator">-></span>bk<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//从unsorted bin 里面取出来</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span>victim<span class="token operator">-></span>size <span class="token operator">&lt;=</span> <span class="token number">2</span> <span class="token operator">*</span> SIZE_SZ<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+              <span class="token operator">||</span> <span class="token function">__builtin_expect</span> <span class="token punctuation">(</span>victim<span class="token operator">-></span>size <span class="token operator">></span> av<span class="token operator">-></span>system_mem<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//判断size是否合法</span>
+            <span class="token function">malloc_printerr</span> <span class="token punctuation">(</span>check_action<span class="token punctuation">,</span> <span class="token string">"malloc(): memory corruption"</span><span class="token punctuation">,</span>
+                             <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">,</span> av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          size <span class="token operator">=</span> <span class="token function">chunksize</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//求出取出的chunk的size</span>
+           <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+              bck <span class="token operator">==</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+              victim <span class="token operator">==</span> av<span class="token operator">-></span>last_remainder <span class="token operator">&amp;&amp;</span>
+              <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nb <span class="token operator">+</span> MINSIZE<span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment" spellcheck="true">//判断是否属于smallbin,并且unsorted bin里面只有这一个chunk，并且chunk输入last remainder chunk,同时size打入用户需要的chunk_size加上最小chunk的size，（其实就是判断能不能拆成两个chunk）</span>
+            <span class="token punctuation">{</span>
+              <span class="token comment" spellcheck="true">/* split and reattach remainder */</span>
+              remainder_size <span class="token operator">=</span> size <span class="token operator">-</span> nb<span class="token punctuation">;</span>
+              remainder <span class="token operator">=</span> <span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token operator">-></span>bk <span class="token operator">=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token operator">-></span>fd <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+              av<span class="token operator">-></span>last_remainder <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+              remainder<span class="token operator">-></span>bk <span class="token operator">=</span> remainder<span class="token operator">-></span>fd <span class="token operator">=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//这里和以上就是拆分和分配操作了</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>remainder_size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//拆分分配给用户后剩余的remainder的size不在small bin,fd，bk指针全置0</span>
+                <span class="token punctuation">{</span>
+                  remainder<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+                  remainder<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+
+              <span class="token function">set_head</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb <span class="token operator">|</span> PREV_INUSE <span class="token operator">|</span>
+                        <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena <span class="token operator">?</span> NON_MAIN_ARENA <span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//设置分配给用户的chunk_head</span>
+              <span class="token function">set_head</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment" spellcheck="true">//这两是设置拆分后没用到的chunk</span>
+              <span class="token function">set_foot</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">//返回申请到的chunk</span>
+              <span class="token function">check_malloced_chunk</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+              <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+<span class="token comment" spellcheck="true">//不满足上述判断的话，就清空unsorted bin </span>
+          <span class="token comment" spellcheck="true">/* remove from unsorted list */</span>
+          <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+          bck<span class="token operator">-></span>fd <span class="token operator">=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+          <span class="token comment" spellcheck="true">/* Take now instead of binning if exact fit */</span>
+
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>size <span class="token operator">==</span> nb<span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//如果size刚好等于用户申请的chunk大小,直接in_use位清0，返回指针。</span>
+            <span class="token punctuation">{</span>
+              <span class="token function">set_inuse_bit_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena<span class="token punctuation">)</span>
+                victim<span class="token operator">-></span>size <span class="token operator">|</span><span class="token operator">=</span> NON_MAIN_ARENA<span class="token punctuation">;</span>
+              <span class="token function">check_malloced_chunk</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+          <span class="token comment" spellcheck="true">/* place chunk in bin */</span>
+
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//如果size在small bin就直接插入该链表</span>
+            <span class="token punctuation">{</span>
+              victim_index <span class="token operator">=</span> <span class="token function">smallbin_index</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              bck <span class="token operator">=</span> <span class="token function">bin_at</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim_index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              fwd <span class="token operator">=</span> bck<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+          <span class="token keyword">else</span>
+            <span class="token punctuation">{</span>
+              victim_index <span class="token operator">=</span> <span class="token function">largebin_index</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//插入large bin</span>
+              bck <span class="token operator">=</span> <span class="token function">bin_at</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim_index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              fwd <span class="token operator">=</span> bck<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+
+              <span class="token comment" spellcheck="true">/* maintain large bins in sorted order */</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>fwd <span class="token operator">!=</span> bck<span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//判断large bin是否为空</span>
+                <span class="token punctuation">{</span>
+                  <span class="token comment" spellcheck="true">/* Or with inuse bit to speed comparisons */</span>
+                  size <span class="token operator">|</span><span class="token operator">=</span> PREV_INUSE<span class="token punctuation">;</span>
+                  <span class="token comment" spellcheck="true">/* if smaller than smallest, bypass loop below */</span>
+                  <span class="token function">assert</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>bck<span class="token operator">-></span>bk<span class="token operator">-></span>size <span class="token operator">&amp;</span> NON_MAIN_ARENA<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>bck<span class="token operator">-></span>bk<span class="token operator">-></span>size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//</span>
+                    <span class="token punctuation">{</span>
+                      fwd <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+                      bck <span class="token operator">=</span> bck<span class="token operator">-></span>bk<span class="token punctuation">;</span>
+
+                      victim<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> fwd<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+                      victim<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> fwd<span class="token operator">-></span>fd<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span>
+                      fwd<span class="token operator">-></span>fd<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> victim<span class="token operator">-></span>bk_nextsize<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                  <span class="token keyword">else</span>
+                    <span class="token punctuation">{</span>
+                      <span class="token function">assert</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>fwd<span class="token operator">-></span>size <span class="token operator">&amp;</span> NON_MAIN_ARENA<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                      <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> size <span class="token operator">&lt;</span> fwd<span class="token operator">-></span>size<span class="token punctuation">)</span>
+                        <span class="token punctuation">{</span>
+                          fwd <span class="token operator">=</span> fwd<span class="token operator">-></span>fd_nextsize<span class="token punctuation">;</span>
+                          <span class="token function">assert</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>fwd<span class="token operator">-></span>size <span class="token operator">&amp;</span> NON_MAIN_ARENA<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span>
+
+                      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> size <span class="token operator">==</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> fwd<span class="token operator">-></span>size<span class="token punctuation">)</span>
+                        <span class="token comment" spellcheck="true">/* Always insert in the second position.  */</span>
+                        fwd <span class="token operator">=</span> fwd<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+                      <span class="token keyword">else</span>
+                        <span class="token punctuation">{</span>
+                          victim<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+                          victim<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> fwd<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span>
+                          fwd<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+                          victim<span class="token operator">-></span>bk_nextsize<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span>
+                      bck <span class="token operator">=</span> fwd<span class="token operator">-></span>bk<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span>
+              <span class="token keyword">else</span>
+                victim<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> victim<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+          <span class="token function">mark_bin</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim_index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          victim<span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+          victim<span class="token operator">-></span>fd <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+          fwd<span class="token operator">-></span>bk <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+          bck<span class="token operator">-></span>fd <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+
+<span class="token macro property">#<span class="token directive keyword">define</span> MAX_ITERS       10000</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">++</span>iters <span class="token operator">>=</span> MAX_ITERS<span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//遍历比申请chunk大的所有large bin链表</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span> 
+        <span class="token punctuation">}</span>
+
+      <span class="token comment" spellcheck="true">/*
+         If a large request, scan through the chunks of current bin in
+         sorted order to find smallest that fits.  Use the skip list for this.
+       */</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+          bin <span class="token operator">=</span> <span class="token function">bin_at</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+          <span class="token comment" spellcheck="true">/* skip scan if empty or largest chunk is too small */</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>victim <span class="token operator">=</span> <span class="token function">first</span> <span class="token punctuation">(</span>bin<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> bin <span class="token operator">&amp;&amp;</span>
+              <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>victim<span class="token operator">-></span>size<span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+              victim <span class="token operator">=</span> victim<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span>
+              <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>size <span class="token operator">=</span> <span class="token function">chunksize</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span>
+                      <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                victim <span class="token operator">=</span> victim<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span>
+
+              <span class="token comment" spellcheck="true">/* Avoid removing the first entry for a size so that the skip
+                 list does not have to be rerouted.  */</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>victim <span class="token operator">!=</span> <span class="token function">last</span> <span class="token punctuation">(</span>bin<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> victim<span class="token operator">-></span>size <span class="token operator">==</span> victim<span class="token operator">-></span>fd<span class="token operator">-></span>size<span class="token punctuation">)</span>
+                victim <span class="token operator">=</span> victim<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+
+              remainder_size <span class="token operator">=</span> size <span class="token operator">-</span> nb<span class="token punctuation">;</span>
+              <span class="token function">unlink</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> bck<span class="token punctuation">,</span> fwd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+              <span class="token comment" spellcheck="true">/* Exhaust */</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>remainder_size <span class="token operator">&lt;</span> MINSIZE<span class="token punctuation">)</span>
+                <span class="token punctuation">{</span>
+                  <span class="token function">set_inuse_bit_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena<span class="token punctuation">)</span>
+                    victim<span class="token operator">-></span>size <span class="token operator">|</span><span class="token operator">=</span> NON_MAIN_ARENA<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+              <span class="token comment" spellcheck="true">/* Split */</span>
+              <span class="token keyword">else</span>
+                <span class="token punctuation">{</span>
+                  remainder <span class="token operator">=</span> <span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token comment" spellcheck="true">/* We cannot assume the unsorted list is empty and therefore
+                     have to perform a complete insert here.  */</span>
+                  bck <span class="token operator">=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  fwd <span class="token operator">=</span> bck<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__glibc_unlikely</span> <span class="token punctuation">(</span>fwd<span class="token operator">-></span>bk <span class="token operator">!=</span> bck<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">{</span>
+                      errstr <span class="token operator">=</span> <span class="token string">"malloc(): corrupted unsorted chunks"</span><span class="token punctuation">;</span>
+                      <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                  remainder<span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+                  remainder<span class="token operator">-></span>fd <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+                  bck<span class="token operator">-></span>fd <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+                  fwd<span class="token operator">-></span>bk <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>remainder_size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">{</span>
+                      remainder<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+                      remainder<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                  <span class="token function">set_head</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb <span class="token operator">|</span> PREV_INUSE <span class="token operator">|</span>
+                            <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena <span class="token operator">?</span> NON_MAIN_ARENA <span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token function">set_head</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token function">set_foot</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+              <span class="token function">check_malloced_chunk</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+
+      <span class="token comment" spellcheck="true">/*
+         Search for a chunk by scanning bins, starting with next largest
+         bin. This search is strictly by best-fit; i.e., the smallest
+         (with ties going to approximately the least recently used) chunk
+         that fits is selected.
+
+         The bitmap avoids needing to check that most blocks are nonempty.
+         The particular case of skipping all bins during warm-up phases
+         when no chunks have been returned yet is faster than it might look.
+       */</span>
+
+      <span class="token operator">++</span>idx<span class="token punctuation">;</span>
+      bin <span class="token operator">=</span> <span class="token function">bin_at</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      block <span class="token operator">=</span> <span class="token function">idx2block</span> <span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      map <span class="token operator">=</span> av<span class="token operator">-></span>binmap<span class="token punctuation">[</span>block<span class="token punctuation">]</span><span class="token punctuation">;</span>
+      bit <span class="token operator">=</span> <span class="token function">idx2bit</span> <span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span> <span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+          <span class="token comment" spellcheck="true">/* Skip rest of block if there are no more set bits in this block.  */</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>bit <span class="token operator">></span> map <span class="token operator">||</span> bit <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+              <span class="token keyword">do</span>
+                <span class="token punctuation">{</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">++</span>block <span class="token operator">>=</span> BINMAPSIZE<span class="token punctuation">)</span> <span class="token comment" spellcheck="true">/* out of bins */</span>
+                    <span class="token keyword">goto</span> use_top<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+              <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>map <span class="token operator">=</span> av<span class="token operator">-></span>binmap<span class="token punctuation">[</span>block<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+              bin <span class="token operator">=</span> <span class="token function">bin_at</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> <span class="token punctuation">(</span>block <span class="token operator">&lt;&lt;</span> BINMAPSHIFT<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+              bit <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+          <span class="token comment" spellcheck="true">/* Advance to bin with set bit. There must be one. */</span>
+          <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>bit <span class="token operator">&amp;</span> map<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+              bin <span class="token operator">=</span> <span class="token function">next_bin</span> <span class="token punctuation">(</span>bin<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              bit <span class="token operator">&lt;&lt;=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+              <span class="token function">assert</span> <span class="token punctuation">(</span>bit <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+          <span class="token comment" spellcheck="true">/* Inspect the bin. It is likely to be non-empty */</span>
+          victim <span class="token operator">=</span> <span class="token function">last</span> <span class="token punctuation">(</span>bin<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+          <span class="token comment" spellcheck="true">/*  If a false alarm (empty bin), clear the bit. */</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>victim <span class="token operator">==</span> bin<span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+              av<span class="token operator">-></span>binmap<span class="token punctuation">[</span>block<span class="token punctuation">]</span> <span class="token operator">=</span> map <span class="token operator">&amp;</span><span class="token operator">=</span> <span class="token operator">~</span>bit<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">/* Write through */</span>
+              bin <span class="token operator">=</span> <span class="token function">next_bin</span> <span class="token punctuation">(</span>bin<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              bit <span class="token operator">&lt;&lt;=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+          <span class="token keyword">else</span>
+            <span class="token punctuation">{</span>
+              size <span class="token operator">=</span> <span class="token function">chunksize</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+              <span class="token comment" spellcheck="true">/*  We know the first chunk in this bin is big enough to use. */</span>
+              <span class="token function">assert</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+              remainder_size <span class="token operator">=</span> size <span class="token operator">-</span> nb<span class="token punctuation">;</span>
+
+              <span class="token comment" spellcheck="true">/* unlink */</span>
+              <span class="token function">unlink</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> bck<span class="token punctuation">,</span> fwd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+              <span class="token comment" spellcheck="true">/* Exhaust */</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>remainder_size <span class="token operator">&lt;</span> MINSIZE<span class="token punctuation">)</span>
+                <span class="token punctuation">{</span>
+                  <span class="token function">set_inuse_bit_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena<span class="token punctuation">)</span>
+                    victim<span class="token operator">-></span>size <span class="token operator">|</span><span class="token operator">=</span> NON_MAIN_ARENA<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+
+              <span class="token comment" spellcheck="true">/* Split */</span>
+              <span class="token keyword">else</span>
+                <span class="token punctuation">{</span>
+                  remainder <span class="token operator">=</span> <span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                  <span class="token comment" spellcheck="true">/* We cannot assume the unsorted list is empty and therefore
+                     have to perform a complete insert here.  */</span>
+                  bck <span class="token operator">=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  fwd <span class="token operator">=</span> bck<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__glibc_unlikely</span> <span class="token punctuation">(</span>fwd<span class="token operator">-></span>bk <span class="token operator">!=</span> bck<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">{</span>
+                      errstr <span class="token operator">=</span> <span class="token string">"malloc(): corrupted unsorted chunks 2"</span><span class="token punctuation">;</span>
+                      <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                  remainder<span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+                  remainder<span class="token operator">-></span>fd <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+                  bck<span class="token operator">-></span>fd <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+                  fwd<span class="token operator">-></span>bk <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+
+                  <span class="token comment" spellcheck="true">/* advertise as last remainder */</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    av<span class="token operator">-></span>last_remainder <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>remainder_size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">{</span>
+                      remainder<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+                      remainder<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                  <span class="token function">set_head</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb <span class="token operator">|</span> PREV_INUSE <span class="token operator">|</span>
+                            <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena <span class="token operator">?</span> NON_MAIN_ARENA <span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token function">set_head</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token function">set_foot</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+              <span class="token function">check_malloced_chunk</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+
+    use_top<span class="token punctuation">:</span>
+      <span class="token comment" spellcheck="true">/*
+         If large enough, split off the chunk bordering the end of memory
+         (held in av->top). Note that this is in accord with the best-fit
+         search rule.  In effect, av->top is treated as larger (and thus
+         less well fitting) than any other available chunk since it can
+         be extended to be as large as necessary (up to system
+         limitations).
+
+         We require that av->top always exists (i.e., has size >=
+         MINSIZE) after initialization, so if it would otherwise be
+         exhausted by current request, it is replenished. (The main
+         reason for ensuring it exists is that we may need MINSIZE space
+         to put in fenceposts in sysmalloc.)
+       */</span>
+
+      victim <span class="token operator">=</span> av<span class="token operator">-></span>top<span class="token punctuation">;</span>
+      size <span class="token operator">=</span> <span class="token function">chunksize</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nb <span class="token operator">+</span> MINSIZE<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+          remainder_size <span class="token operator">=</span> size <span class="token operator">-</span> nb<span class="token punctuation">;</span>
+          remainder <span class="token operator">=</span> <span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          av<span class="token operator">-></span>top <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+          <span class="token function">set_head</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb <span class="token operator">|</span> PREV_INUSE <span class="token operator">|</span>
+                    <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena <span class="token operator">?</span> NON_MAIN_ARENA <span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token function">set_head</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+          <span class="token function">check_malloced_chunk</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+      <span class="token comment" spellcheck="true">/* When we are using atomic ops to free fast chunks we can get
+         here for all block sizes.  */</span>
+      <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">have_fastchunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+          <span class="token function">malloc_consolidate</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token comment" spellcheck="true">/* restore original bin index */</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            idx <span class="token operator">=</span> <span class="token function">smallbin_index</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">else</span>
+            idx <span class="token operator">=</span> <span class="token function">largebin_index</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+      <span class="token comment" spellcheck="true">/*
+         Otherwise, relay to handle system-dependent cases
+       */</span>
+      <span class="token keyword">else</span>
+        <span class="token punctuation">{</span>
+          <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">sysmalloc</span> <span class="token punctuation">(</span>nb<span class="token punctuation">,</span> av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>p <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+            <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<h3 id="int-malloc函数的整体思路。"><a href="#int-malloc函数的整体思路。" class="headerlink" title="_int_malloc函数的整体思路。"></a>_int_malloc函数的整体思路。</h3><p>第一步：如果进程没有关联的分配区，就通过sysmalloc从操作系统分配内存。<br>第二步：从fastbin查找对应大小的chunk并返回，如果失败进入第三步。<br>第三步：从smallbin查找对应大小的chunk并返回，或者将fastbin中的空闲chunk合并放入unsortedbin中，如果失败进入第四步。<br>第四步：遍历unsortedbin，从unsortedbin中查找对应大小的chunk并返回，根据大小将unsortedbin中的空闲chunk插入smallbin或者largebin中。进入第五步。<br>第五步：从largebin指定位置查找对应大小的chunk并返回，如果失败进入第六步。<br>第六步：从largebin中大于指定位置的双向链表中查找对应大小的chunk并返回，如果失败进入第七步。<br>第七步：从topchunk中分配对应大小的chunk并返回，topchunk中没有足够的空间，就查找fastbin中是否有空闲chunk，如果有，就合并fastbin中的chunk并加入到unsortedbin中，然后跳回第四步。如果fastbin中没有空闲chunk，就通过sysmalloc从操作系统分配内存。</p>
+<h3 id="int-free"><a href="#int-free" class="headerlink" title="_int_free"></a>_int_free</h3><p>这就是malloc源码里面的第二个大重点了。</p>
+<pre class=" language-c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span>
+<span class="token function">_int_free</span> <span class="token punctuation">(</span>mstate av<span class="token punctuation">,</span> mchunkptr p<span class="token punctuation">,</span> <span class="token keyword">int</span> have_lock<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+  INTERNAL_SIZE_T size<span class="token punctuation">;</span>        <span class="token comment" spellcheck="true">/* its size */</span>
+  mfastbinptr <span class="token operator">*</span>fb<span class="token punctuation">;</span>             <span class="token comment" spellcheck="true">/* associated fastbin */</span>
+  mchunkptr nextchunk<span class="token punctuation">;</span>         <span class="token comment" spellcheck="true">/* next contiguous chunk */</span>
+  INTERNAL_SIZE_T nextsize<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* its size */</span>
+  <span class="token keyword">int</span> nextinuse<span class="token punctuation">;</span>               <span class="token comment" spellcheck="true">/* true if nextchunk is used */</span>
+  INTERNAL_SIZE_T prevsize<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* size of previous contiguous chunk */</span>
+  mchunkptr bck<span class="token punctuation">;</span>               <span class="token comment" spellcheck="true">/* misc temp for linking */</span>
+  mchunkptr fwd<span class="token punctuation">;</span>               <span class="token comment" spellcheck="true">/* misc temp for linking */</span>
+
+  <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>errstr <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+  <span class="token keyword">int</span> locked <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+  size <span class="token operator">=</span> <span class="token function">chunksize</span> <span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment" spellcheck="true">/* Little security check which won't hurt performance: the
+     allocator never wrapps around at the end of the address space.
+     Therefore we can exclude some size values which might appear
+     here by accident or by "design" from some intruder.  */</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>uintptr_t<span class="token punctuation">)</span> p <span class="token operator">></span> <span class="token punctuation">(</span>uintptr_t<span class="token punctuation">)</span> <span class="token operator">-</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+      <span class="token operator">||</span> <span class="token function">__builtin_expect</span> <span class="token punctuation">(</span><span class="token function">misaligned_chunk</span> <span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+      errstr <span class="token operator">=</span> <span class="token string">"free(): invalid pointer"</span><span class="token punctuation">;</span>
+    errout<span class="token punctuation">:</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>have_lock <span class="token operator">&amp;&amp;</span> locked<span class="token punctuation">)</span>
+        <span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token function">mutex_unlock</span> <span class="token punctuation">(</span><span class="token operator">&amp;</span>av<span class="token operator">-></span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token function">malloc_printerr</span> <span class="token punctuation">(</span>check_action<span class="token punctuation">,</span> errstr<span class="token punctuation">,</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">,</span> av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token comment" spellcheck="true">/* We know that each chunk is at least MINSIZE bytes in size or a
+     multiple of MALLOC_ALIGNMENT.  */</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__glibc_unlikely</span> <span class="token punctuation">(</span>size <span class="token operator">&lt;</span> MINSIZE <span class="token operator">||</span> <span class="token operator">!</span><span class="token function">aligned_OK</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+      errstr <span class="token operator">=</span> <span class="token string">"free(): invalid size"</span><span class="token punctuation">;</span>
+      <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+  <span class="token function">check_inuse_chunk</span><span class="token punctuation">(</span>av<span class="token punctuation">,</span> p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment" spellcheck="true">/*
+    If eligible, place chunk on a fastbin so it can be found
+    and used quickly in malloc.
+  */</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span> <span class="token operator">&lt;=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token function">get_max_fast</span> <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token macro property">#<span class="token directive keyword">if</span> TRIM_FASTBINS</span>
+      <span class="token comment" spellcheck="true">/*
+    If TRIM_FASTBINS set, don't place chunks
+    bordering top into fastbins
+      */</span>
+      <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span><span class="token function">chunk_at_offset</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span> <span class="token operator">!=</span> av<span class="token operator">-></span>top<span class="token punctuation">)</span>
+<span class="token macro property">#<span class="token directive keyword">endif</span></span>
+      <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span><span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token operator">-></span>size <span class="token operator">&lt;=</span> <span class="token number">2</span> <span class="token operator">*</span> SIZE_SZ<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    <span class="token operator">||</span> <span class="token function">__builtin_expect</span> <span class="token punctuation">(</span><span class="token function">chunksize</span> <span class="token punctuation">(</span><span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                 <span class="token operator">>=</span> av<span class="token operator">-></span>system_mem<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">/* We might not have a lock at this point and concurrent modifications
+       of system_mem might have let to a false positive.  Redo the test
+       after getting the lock.  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>have_lock
+        <span class="token operator">||</span> <span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token function">assert</span> <span class="token punctuation">(</span>locked <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token function">mutex_lock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>av<span class="token operator">-></span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          locked <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+          <span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token operator">-></span>size <span class="token operator">&lt;=</span> <span class="token number">2</span> <span class="token operator">*</span> SIZE_SZ
+            <span class="token operator">||</span> <span class="token function">chunksize</span> <span class="token punctuation">(</span><span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">>=</span> av<span class="token operator">-></span>system_mem<span class="token punctuation">;</span>
+          <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+        errstr <span class="token operator">=</span> <span class="token string">"free(): invalid next size (fast)"</span><span class="token punctuation">;</span>
+        <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span> have_lock<span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+        <span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span><span class="token function">mutex_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>av<span class="token operator">-></span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        locked <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+
+    <span class="token function">free_perturb</span> <span class="token punctuation">(</span><span class="token function">chunk2mem</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">,</span> size <span class="token operator">-</span> <span class="token number">2</span> <span class="token operator">*</span> SIZE_SZ<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">set_fastchunks</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">int</span> idx <span class="token operator">=</span> <span class="token function">fastbin_index</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    fb <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token function">fastbin</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment" spellcheck="true">/* Atomically link P to its fastbin: P->FD = *FB; *FB = P;  */</span>
+    mchunkptr old <span class="token operator">=</span> <span class="token operator">*</span>fb<span class="token punctuation">,</span> old2<span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">int</span> old_idx <span class="token operator">=</span> <span class="token operator">~</span><span class="token number">0u</span><span class="token punctuation">;</span>
+    <span class="token keyword">do</span>
+      <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">/* Check that the top of the bin is not the record we are going to add
+       (i.e., double free).  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span>old <span class="token operator">==</span> p<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+        errstr <span class="token operator">=</span> <span class="token string">"double free or corruption (fasttop)"</span><span class="token punctuation">;</span>
+        <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token comment" spellcheck="true">/* Check that size of fastbin chunk at the top is the same as
+       size of the chunk that we are adding.  We can dereference OLD
+       only if we have the lock, otherwise it might have already been
+       deallocated.  See use of OLD_IDX below for the actual check.  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>have_lock <span class="token operator">&amp;&amp;</span> old <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+      old_idx <span class="token operator">=</span> <span class="token function">fastbin_index</span><span class="token punctuation">(</span><span class="token function">chunksize</span><span class="token punctuation">(</span>old<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    p<span class="token operator">-></span>fd <span class="token operator">=</span> old2 <span class="token operator">=</span> old<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>old <span class="token operator">=</span> <span class="token function">catomic_compare_and_exchange_val_rel</span> <span class="token punctuation">(</span>fb<span class="token punctuation">,</span> p<span class="token punctuation">,</span> old2<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> old2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>have_lock <span class="token operator">&amp;&amp;</span> old <span class="token operator">!=</span> <span class="token constant">NULL</span> <span class="token operator">&amp;&amp;</span> <span class="token function">__builtin_expect</span> <span class="token punctuation">(</span>old_idx <span class="token operator">!=</span> idx<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+    errstr <span class="token operator">=</span> <span class="token string">"invalid fastbin entry (free)"</span><span class="token punctuation">;</span>
+    <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token comment" spellcheck="true">/*
+    Consolidate other non-mmapped chunks as they arrive.
+  */</span>
+
+  <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">chunk_is_mmapped</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span> have_lock<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span><span class="token function">mutex_lock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>av<span class="token operator">-></span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      locked <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    nextchunk <span class="token operator">=</span> <span class="token function">chunk_at_offset</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment" spellcheck="true">/* Lightweight tests: check whether the block is already the
+       top block.  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__glibc_unlikely</span> <span class="token punctuation">(</span>p <span class="token operator">==</span> av<span class="token operator">-></span>top<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+    errstr <span class="token operator">=</span> <span class="token string">"double free or corruption (top)"</span><span class="token punctuation">;</span>
+    <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token comment" spellcheck="true">/* Or whether the next chunk is beyond the boundaries of the arena.  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span><span class="token function">contiguous</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span>
+              <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span> nextchunk
+              <span class="token operator">>=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span> av<span class="token operator">-></span>top <span class="token operator">+</span> <span class="token function">chunksize</span><span class="token punctuation">(</span>av<span class="token operator">-></span>top<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+    errstr <span class="token operator">=</span> <span class="token string">"double free or corruption (out)"</span><span class="token punctuation">;</span>
+    <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token comment" spellcheck="true">/* Or whether the block is actually not marked used.  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__glibc_unlikely</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">prev_inuse</span><span class="token punctuation">(</span>nextchunk<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+    errstr <span class="token operator">=</span> <span class="token string">"double free or corruption (!prev)"</span><span class="token punctuation">;</span>
+    <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+
+    nextsize <span class="token operator">=</span> <span class="token function">chunksize</span><span class="token punctuation">(</span>nextchunk<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span> <span class="token punctuation">(</span>nextchunk<span class="token operator">-></span>size <span class="token operator">&lt;=</span> <span class="token number">2</span> <span class="token operator">*</span> SIZE_SZ<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    <span class="token operator">||</span> <span class="token function">__builtin_expect</span> <span class="token punctuation">(</span>nextsize <span class="token operator">>=</span> av<span class="token operator">-></span>system_mem<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">{</span>
+    errstr <span class="token operator">=</span> <span class="token string">"free(): invalid next size (normal)"</span><span class="token punctuation">;</span>
+    <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+
+    <span class="token function">free_perturb</span> <span class="token punctuation">(</span><span class="token function">chunk2mem</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">,</span> size <span class="token operator">-</span> <span class="token number">2</span> <span class="token operator">*</span> SIZE_SZ<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment" spellcheck="true">/* consolidate backward */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">prev_inuse</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      prevsize <span class="token operator">=</span> p<span class="token operator">-></span>prev_size<span class="token punctuation">;</span>
+      size <span class="token operator">+</span><span class="token operator">=</span> prevsize<span class="token punctuation">;</span>
+      p <span class="token operator">=</span> <span class="token function">chunk_at_offset</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">long</span><span class="token punctuation">)</span> prevsize<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token function">unlink</span><span class="token punctuation">(</span>av<span class="token punctuation">,</span> p<span class="token punctuation">,</span> bck<span class="token punctuation">,</span> fwd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>nextchunk <span class="token operator">!=</span> av<span class="token operator">-></span>top<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">/* get and clear inuse bit */</span>
+      nextinuse <span class="token operator">=</span> <span class="token function">inuse_bit_at_offset</span><span class="token punctuation">(</span>nextchunk<span class="token punctuation">,</span> nextsize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment" spellcheck="true">/* consolidate forward */</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>nextinuse<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">unlink</span><span class="token punctuation">(</span>av<span class="token punctuation">,</span> nextchunk<span class="token punctuation">,</span> bck<span class="token punctuation">,</span> fwd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    size <span class="token operator">+</span><span class="token operator">=</span> nextsize<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span> <span class="token keyword">else</span>
+    <span class="token function">clear_inuse_bit_at_offset</span><span class="token punctuation">(</span>nextchunk<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment" spellcheck="true">/*
+    Place the chunk in unsorted chunk list. Chunks are
+    not placed into regular bins until after they have
+    been given one chance to be used in malloc.
+      */</span>
+
+      bck <span class="token operator">=</span> <span class="token function">unsorted_chunks</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      fwd <span class="token operator">=</span> bck<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__glibc_unlikely</span> <span class="token punctuation">(</span>fwd<span class="token operator">-></span>bk <span class="token operator">!=</span> bck<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+      errstr <span class="token operator">=</span> <span class="token string">"free(): corrupted unsorted chunks"</span><span class="token punctuation">;</span>
+      <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+      p<span class="token operator">-></span>fd <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+      p<span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">in_smallbin_range</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+      p<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+      p<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+      bck<span class="token operator">-></span>fd <span class="token operator">=</span> p<span class="token punctuation">;</span>
+      fwd<span class="token operator">-></span>bk <span class="token operator">=</span> p<span class="token punctuation">;</span>
+
+      <span class="token function">set_head</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token function">set_foot</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token function">check_free_chunk</span><span class="token punctuation">(</span>av<span class="token punctuation">,</span> p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">/*
+      If the chunk borders the current high end of memory,
+      consolidate into top
+    */</span>
+
+    <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      size <span class="token operator">+</span><span class="token operator">=</span> nextsize<span class="token punctuation">;</span>
+      <span class="token function">set_head</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      av<span class="token operator">-></span>top <span class="token operator">=</span> p<span class="token punctuation">;</span>
+      <span class="token function">check_chunk</span><span class="token punctuation">(</span>av<span class="token punctuation">,</span> p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">/*
+      If freeing a large space, consolidate possibly-surrounding
+      chunks. Then, if the total unused topmost memory exceeds trim
+      threshold, ask malloc_trim to reduce top.
+
+      Unless max_fast is 0, we don't know if there are fastbins
+      bordering top, so we cannot tell for sure whether threshold
+      has been reached unless fastbins are consolidated.  But we
+      don't want to consolidate on each free.  As a compromise,
+      consolidation is performed if FASTBIN_CONSOLIDATION_THRESHOLD
+      is reached.
+    */</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span> <span class="token operator">>=</span> FASTBIN_CONSOLIDATION_THRESHOLD<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">have_fastchunks</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token function">malloc_consolidate</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>av <span class="token operator">==</span> <span class="token operator">&amp;</span>main_arena<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token macro property">#<span class="token directive keyword">ifndef</span> MORECORE_CANNOT_TRIM</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token function">chunksize</span><span class="token punctuation">(</span>av<span class="token operator">-></span>top<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">>=</span>
+        <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span><span class="token punctuation">(</span>mp_<span class="token punctuation">.</span>trim_threshold<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token function">systrim</span><span class="token punctuation">(</span>mp_<span class="token punctuation">.</span>top_pad<span class="token punctuation">,</span> av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">endif</span></span>
+      <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">/* Always try heap_trim(), even if the top chunk is not
+       large, because the corresponding heap might go away.  */</span>
+    heap_info <span class="token operator">*</span>heap <span class="token operator">=</span> <span class="token function">heap_for_ptr</span><span class="token punctuation">(</span><span class="token function">top</span><span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">assert</span><span class="token punctuation">(</span>heap<span class="token operator">-></span>ar_ptr <span class="token operator">==</span> av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">heap_trim</span><span class="token punctuation">(</span>heap<span class="token punctuation">,</span> mp_<span class="token punctuation">.</span>top_pad<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span> have_lock<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token function">assert</span> <span class="token punctuation">(</span>locked<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span><span class="token function">mutex_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>av<span class="token operator">-></span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment" spellcheck="true">/*
+    If the chunk was allocated via mmap, release via munmap().
+  */</span>
+
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token function">munmap_chunk</span> <span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>相关参考:</p>
+<blockquote>
+<p><a href="https://blog.csdn.net/conansonic/article/details/50241523" target="_blank" rel="noopener">https://blog.csdn.net/conansonic/article/details/50241523</a><br>glibc 2.23源码</p>
+</blockquote>
+
+            </div>
+            <hr>
+
+            
+
+            <link rel="stylesheet" type="text/css" href="/libs/share/css/share.min.css">
+
+<div id="article-share">
+    
+    <div class="social-share" data-disabled="qzone" data-wechat-qrcode-helper="<p>微信里点“发现”->“扫一扫”二维码便可查看分享。</p>"></div>
+    
+</div>
+
+<script src="/libs/share/js/social-share.min.js"></script>
+
+            
+
+    <div class="reprint" id="reprint-statement">
+        <p class="reprint-tip">
+            <i class="fa fa-exclamation-triangle"></i>&nbsp;&nbsp;
+            <span>转载规则</span>
+        </p>
+        
+            <div class="center-align">
+                <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
+                    <img alt style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png">
+                </a>
+            </div>
+            <br>
+            <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
+                    《Glibc-2.23-malloc源码审计》
+                </span> 由
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2020/01/30/glibc-2-23-malloc-yuan-ma-shen-ji/" property="cc:attributionName" rel="cc:attributionURL">
+                时钟
+            </a> 采用
+            <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
+                知识共享署名 4.0 国际许可协议
+            </a>进行许可。
+        
+    </div>
+
+    <script async defer>
+      document.addEventListener("copy", function (e) {
+        let toastHTML = '<span>复制成功，请遵循本文的转载规则</span><button class="btn-flat toast-action" onclick="navToReprintStatement()" style="font-size: smaller">查看</a>';
+        M.toast({html: toastHTML})
+      });
+
+      function navToReprintStatement() {
+        $("html, body").animate({scrollTop: $("#reprint-statement").offset().top - 80}, 800);
+      }
+    </script>
+
+
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/2020/01/30/buu/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="buu">
+                        
+                        <span class="card-title">buu</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            babyheap_0ctf_2017这个题目保护全开，我们分析一下它的数据结构：
+
+可以看出，在一个程序分配出的地址上，存储了堆块是否被使用的flag,和堆块的size和堆块的内存指针，同时值得注意的是calloc，它和malloc有所不同
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/2020/01/30/tcache-attack/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="tcache_attack">
+                        
+                        <span class="card-title">tcache_attack</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            tcache attack glibc 2.26tcache 是 glibc 2.26 (ubuntu 17.10) 之后引入的一种技术，它带来了很多新的堆攻击方式。
+相关结构体tcache_entry
+typedef struct tca
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+</div>
+
+
+<script>
+    $('#articleContent').on('copy', function (e) {
+        // IE8 or earlier browser is 'undefined'
+        if (typeof window.getSelection === 'undefined') return;
+
+        var selection = window.getSelection();
+        // if the selection is short let's not annoy our users.
+        if (('' + selection).length < Number.parseInt('120')) {
+            return;
+        }
+
+        // create a div outside of the visible area and fill it with the selected text.
+        var bodyElement = document.getElementsByTagName('body')[0];
+        var newdiv = document.createElement('div');
+        newdiv.style.position = 'absolute';
+        newdiv.style.left = '-99999px';
+        bodyElement.appendChild(newdiv);
+        newdiv.appendChild(selection.getRangeAt(0).cloneContents());
+
+        // we need a <pre> tag workaround.
+        // otherwise the text inside "pre" loses all the line breaks!
+        if (selection.getRangeAt(0).commonAncestorContainer.nodeName === 'PRE') {
+            newdiv.innerHTML = "<pre>" + newdiv.innerHTML + "</pre>";
+        }
+
+        var url = document.location.href;
+        newdiv.innerHTML += '<br />'
+            + '来源: 时钟<br />'
+            + '作者: 时钟<br />'
+            + '链接: <a href="' + url + '">' + url + '</a><br />'
+            + '本文章著作权归作者所有，任何形式的转载都请注明出处。';
+
+        selection.selectAllChildren(newdiv);
+        window.setTimeout(function () {bodyElement.removeChild(newdiv);}, 200);
+    });
+</script>
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget">
+            <div class="toc-title"><i class="fa fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fa fa-list"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('#articleContent').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).slideUp(500);
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).slideDown(500);
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+    
+
+</main>
+
+
+<footer class="page-footer bg-color">
+    <div class="container row center-align">
+        <div class="col s12 m8 l8 copy-right">
+            本站由&copy;<a href="https://blinkfox.github.io/" target="_blank">Blinkfox</a>基于
+            <a href="https://hexo.io/" target="_blank">Hexo</a> 的
+            <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">hexo-theme-matery</a>主题搭建.
+
+            
+                &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
+                <span class="white-color">32.2k</span>
+            
+
+            
+			
+                <br>
+                
+                <span id="busuanzi_container_site_pv">
+                    <i class="fa fa-heart-o"></i>
+                    本站总访问量 <span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+                
+                
+                <span id="busuanzi_container_site_uv">
+                    <i class="fa fa-users"></i>
+                    次,&nbsp;访客数 <span id="busuanzi_value_site_uv" class="white-color"></span> 人.
+                </span>
+                
+            
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/shizhongpwn/pwnstudy" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fa fa-github"></i>
+    </a>
+
+
+
+    <a href="mailto:522796871@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+        <i class="fa fa-envelope-open"></i>
+    </a>
+
+
+
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=522796871" class="tooltipped" data-tooltip="QQ联系我: 522796871" data-position="top" data-delay="50">
+        <i class="fa fa-qq"></i>
+    </a>
+
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+<!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fa fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字" class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script src="/js/search.js"></script>
+<script type="text/javascript">
+$(function () {
+    searchFunc("/" + "search.xml", 'searchInput', 'searchResult');
+});
+</script>
+<!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fa fa-angle-up"></i>
+    </a>
+</div>
+
+
+<script src="/libs/materialize/materialize.min.js"></script>
+<script src="/libs/masonry/masonry.pkgd.min.js"></script>
+<script src="/libs/aos/aos.js"></script>
+<script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+<script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+<script src="/js/matery.js"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+
+    <script src="/libs/others/clicklove.js"></script>
+
+
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+
+
+</body>
+</html>
