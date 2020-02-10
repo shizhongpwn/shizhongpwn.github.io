@@ -275,6 +275,298 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
             
             <div class="article col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
+                    <a href="/2020/01/30/tcache-attack/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="tcache_attack">
+                            
+                            <span class="card-title">tcache_attack</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                tcache attack glibc 2.26tcache 是 glibc 2.26 (ubuntu 17.10) 之后引入的一种技术，它带来了很多新的堆攻击方式。
+相关结构体tcache_entry
+typedef struct tca
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/01/30/2020-heap-practice/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/11.jpg" class="responsive-img" alt="2020_heap_practice">
+                            
+                            <span class="card-title">2020_heap_practice</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                2019护网杯 mergeheap这个题目的逻辑比较清晰，难的地方在于利用思路。
+遍观整个程序：
+自己实现的read函数没有off-by-one:
+delete函数没有UAF之类的
+因此整个程序没有什么明显的漏洞，下面就要对执行逻辑进行分析
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/01/30/pwnablele-exercises/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/10.jpg" class="responsive-img" alt="pwnablele_exercises">
+                            
+                            <span class="card-title">pwnablele_exercises</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                pwnable.tw不愧是誉为pwn手最爱的平台，题目很难，但是每一个题目都十分具有代表性，一句话：快乐很多，知识很多，哈哈！
+3x17首先这是一个64位的elf文件，check结果如下：
+[*] &#39;/home/root0/prat
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="linux 64位万能gadget & 栈迁移 & rop">
+                            
+                            <span class="card-title">linux 64位万能gadget & 栈迁移 & rop</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                linux 64位万能gadget &amp; 栈迁移 &amp; rop用一个例题(下面有题目链接)为例子，下面是它的关键函数：最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-15
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/01/11/2019xman-ru-ying-sai/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="2019XMAN冬令营入营赛">
+                            
+                            <span class="card-title">2019XMAN冬令营入营赛</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                2019XMAN入营赛XMAN训练营的题目，还是能学到不少东西的，就拿来看了看。
+babyarm这个题目并不难，难在于它是一个arm的架构，所以难以调试，不过从出题人哪里得到一个很好的github项目arm_now，但是我看了看还是没办法用
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-11
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2019/11/20/2019-hu-xiang-bei/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="2019湖湘杯">
+                            
+                            <span class="card-title">2019湖湘杯</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                练习赛一共两个pwn，第一个没啥说的，第二个是个格式化，但是由于格式化之前把握不深导致菜的一批，很感谢ditto师傅能够指点一波，看了师傅的博客，受益匪浅。第一个尴尬点：
+我在泄露的时候泄露出了一个(nil)的神奇东西，本来觉得可能是那些限
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-20
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
                     <a href="/2019/11/05/2019i-chun-qiu-da-ti-sai/">
                         <div class="card-image">
                             
@@ -473,309 +765,6 @@ from LibcSearch
                 </div>
             </div>
             
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/08/16/glibc-heap-fastbin-corruption/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/7.jpg" class="responsive-img" alt="glibc heap Fastbin Corruption">
-                            
-                            <span class="card-title">glibc heap Fastbin Corruption</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                基础知识：
-
-fastbin: Chunk Size &lt;= get_max_fast()的chunk（其实就是64bits的是128bytes，32位的是64bytes）  ，它们会被放在被称为fastbin的bin里面
-
-
-上面的f
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-16
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn/" target="_blank">
-                            <span class="chip bg-color">pwn</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/08/16/chunk-extend-and-overlapping/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/3.jpg" class="responsive-img" alt="Chunk Extend and Overlapping">
-                            
-                            <span class="card-title">Chunk Extend and Overlapping</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                chunk extend 堆利用：    程序中堆的利用 可以控制chunk header中的数据 例如：heap overflowptmalloc 对chunk 操作的存在漏洞。
-首先：怎么获取chunk的大小？
-
-/* Get size
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-16
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn/" target="_blank">
-                            <span class="chip bg-color">pwn</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/08/03/64-wei-house-of-spirit/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="64位 house of spirit">
-                            
-                            <span class="card-title">64位 house of spirit</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                这个题目有问题，但是重要的是利用思想：可以把源码贴出来帮助理解：
-#include&lt;stdio.h&gt;
-#include&lt;stdlib.h&gt;
-#include&lt;string.h&gt;
-#include&lt;u
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                    CTF题解
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn/" target="_blank">
-                            <span class="chip bg-color">pwn</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/08/03/stack-cookie-tan-suo/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/20.jpg" class="responsive-img" alt="stack cookie探索">
-                            
-                            <span class="card-title">stack cookie探索</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                stack cookie的两种讲法
-
-windows平台上叫 /GS:cookie
-linux上叫Stack Canary
-
-它的原理就是在ebp-4的地方插入一个随机数（4字节还是8字节看计算机位数了），然后在函数返回（return）的时
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn/" target="_blank">
-                            <span class="chip bg-color">pwn</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/08/03/glibc-heap-house-of-spirit/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/23.jpg" class="responsive-img" alt="glibc heap House of Spirit">
-                            
-                            <span class="card-title">glibc heap House of Spirit</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                这个技术也是针对于fastbin，属于fastbin_attack的一种。关键：目标位置伪造fastbin chunk并将其释放，进而实现在指定地址分配chunk
-关于free时候的检查：
-
-free检查会看size的低字节flag的IS_
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn/" target="_blank">
-                            <span class="chip bg-color">pwn</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/08/02/ni-xiang-gong-cheng-xiao-zhi-shi/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="逆向工程小知识">
-                            
-                            <span class="card-title">逆向工程小知识</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                在VB中：vbaVarForInit() , vbaVarForNext() 可以使逆向分析人员在字符串对象中逐个引用字符。 后面可以跟loop count (EBX) 使其按指定次数运转循环
-MSVBVM50.rtcMsgBox  \\调
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/逆向工程/" class="post-category" target="_blank">
-                                    逆向工程
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/reverse/" target="_blank">
-                            <span class="chip bg-color">reverse</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
         </div>
     </article>
 
@@ -815,7 +804,7 @@ MSVBVM50.rtcMsgBox  \\调
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">34k</span>
+                <span class="white-color">45.7k</span>
             
 
             

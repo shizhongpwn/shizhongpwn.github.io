@@ -1,0 +1,1006 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+    <meta name="keywords" content="IO攻击总结, 时钟">
+    <meta name="description" content="IO攻击总结_IO_FILE结构体相关truct _IO_FILE {
+  int _flags;        /* High-order word is _IO_MAGIC; rest is flags. */
+#define _IO_">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>IO攻击总结 | 时钟</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="/css/my.css">
+    <style type="text/css">
+        
+    </style>
+
+    <script src="/libs/jquery/jquery-2.2.0.min.js"></script>
+<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css"></head>
+
+
+<body>
+
+<header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">时钟</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fa fa-navicon"></i></a>
+<ul class="right">
+    
+    <li class="hide-on-med-and-down">
+        <a href="/" class="waves-effect waves-light">
+            
+            <i class="fa fa-home"></i>
+            
+            <span>首页</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/tags" class="waves-effect waves-light">
+            
+            <i class="fa fa-tags"></i>
+            
+            <span>标签</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/categories" class="waves-effect waves-light">
+            
+            <i class="fa fa-bookmark"></i>
+            
+            <span>分类</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/archives" class="waves-effect waves-light">
+            
+            <i class="fa fa-archive"></i>
+            
+            <span>归档</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/about" class="waves-effect waves-light">
+            
+            <i class="fa fa-user-circle-o"></i>
+            
+            <span>关于</span>
+        </a>
+    </li>
+    
+    <li>
+        <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+            <i id="searchIcon" class="fa fa-search" title="搜索"></i>
+        </a>
+    </li>
+</ul>
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">时钟</div>
+        <div class="logo-desc">
+            
+            二进制小白进阶之路
+            
+        </div>
+    </div>
+
+    
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li>
+            <a href="/" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-home"></i>
+                
+                首页
+            </a>
+        </li>
+        
+        <li>
+            <a href="/tags" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-tags"></i>
+                
+                标签
+            </a>
+        </li>
+        
+        <li>
+            <a href="/categories" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-bookmark"></i>
+                
+                分类
+            </a>
+        </li>
+        
+        <li>
+            <a href="/archives" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-archive"></i>
+                
+                归档
+            </a>
+        </li>
+        
+        <li>
+            <a href="/about" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-user-circle-o"></i>
+                
+                关于
+            </a>
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/shizhongpwn/pwnstudy" class="waves-effect waves-light" target="_blank">
+                <i class="fa fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #0f9d58;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/shizhongpwn/pwnstudy" class="github-corner tooltipped hide-on-med-and-down" target="_blank" data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewbox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/2.jpg')">
+    <div class="container">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <div class="description center-align post-title">
+                        IO攻击总结
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<main class="post-container content">
+
+    
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+<style>
+    #articleContent h1::before,
+    #articleContent h2::before,
+    #articleContent h3::before,
+    #articleContent h4::before,
+    #articleContent h5::before,
+    #articleContent h6::before {
+        display: block;
+        content: " ";
+        height: 100px;
+        margin-top: -100px;
+        visibility: hidden;
+    }
+
+    #articleContent :focus {
+        outline: none;
+    }
+
+    .toc-fixed {
+        position: fixed;
+        top: 64px;
+    }
+
+    .toc-widget {
+        padding-left: 20px;
+    }
+
+    .toc-widget .toc-title {
+        margin: 35px 0 15px 0;
+        padding-left: 17px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1.5rem;
+    }
+
+    .toc-widget ol {
+        padding: 0;
+        list-style: none;
+    }
+
+    #toc-content ol {
+        padding-left: 10px;
+    }
+
+    #toc-content ol li {
+        padding-left: 10px;
+    }
+
+    #toc-content .toc-link:hover {
+        color: #42b983;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    #toc-content .toc-link::before {
+        background-color: transparent;
+        max-height: 25px;
+    }
+
+    #toc-content .is-active-link {
+        color: #42b983;
+    }
+
+    #toc-content .is-active-link::before {
+        background-color: #42b983;
+    }
+
+    #floating-toc-btn {
+        position: fixed;
+        right: 20px;
+        bottom: 76px;
+        padding-top: 15px;
+        margin-bottom: 0;
+        z-index: 998;
+    }
+
+    #floating-toc-btn .btn-floating {
+        width: 48px;
+        height: 48px;
+    }
+
+    #floating-toc-btn .btn-floating i {
+        line-height: 48px;
+        font-size: 1.4rem;
+    }
+</style>
+<div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/pwn/" target="_blank">
+                                <span class="chip bg-color">pwn</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fa fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                漏洞利用
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                <div class="post-date info-break-policy">
+                    <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2020-02-10
+                </div>
+
+                
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
+                        1.4k
+                    </div>
+                    
+
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                        6 分
+                    </div>
+                    
+                
+				
+				
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="fa fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h1 id="IO攻击总结"><a href="#IO攻击总结" class="headerlink" title="IO攻击总结"></a>IO攻击总结</h1><h2 id="IO-FILE结构体相关"><a href="#IO-FILE结构体相关" class="headerlink" title="_IO_FILE结构体相关"></a>_IO_FILE结构体相关</h2><pre class=" language-c"><code class="language-c">truct _IO_FILE <span class="token punctuation">{</span>
+  <span class="token keyword">int</span> _flags<span class="token punctuation">;</span>        <span class="token comment" spellcheck="true">/* High-order word is _IO_MAGIC; rest is flags. */</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> _IO_file_flags _flags</span>
+
+  <span class="token comment" spellcheck="true">/* The following pointers correspond to the C++ streambuf protocol. */</span>
+  <span class="token comment" spellcheck="true">/* Note:  Tk uses the _IO_read_ptr and _IO_read_end fields directly. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_ptr<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Current read pointer */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_end<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* End of get area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_base<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Start of putback+get area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_base<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Start of put area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_ptr<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Current put pointer. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_end<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* End of put area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_buf_base<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Start of reserve area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_buf_end<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* End of reserve area. */</span>
+  <span class="token comment" spellcheck="true">/* The following fields are used to support backing up and undo. */</span>
+  <span class="token keyword">char</span> <span class="token operator">*</span>_IO_save_base<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">/* Pointer to start of non-current get area. */</span>
+  <span class="token keyword">char</span> <span class="token operator">*</span>_IO_backup_base<span class="token punctuation">;</span>  <span class="token comment" spellcheck="true">/* Pointer to first valid character of backup area */</span>
+  <span class="token keyword">char</span> <span class="token operator">*</span>_IO_save_end<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">/* Pointer to end of non-current get area. */</span>
+  <span class="token keyword">struct</span> _IO_marker <span class="token operator">*</span>_markers<span class="token punctuation">;</span>
+  <span class="token keyword">struct</span> _IO_FILE <span class="token operator">*</span>_chain<span class="token punctuation">;</span>
+  <span class="token keyword">int</span> _fileno<span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">if</span> 0</span>
+  <span class="token keyword">int</span> _blksize<span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">else</span></span>
+  <span class="token keyword">int</span> _flags2<span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">endif</span></span>
+  _IO_off_t _old_offset<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">/* This used to be _offset but it's too small.  */</span>
+
+<span class="token macro property">#<span class="token directive keyword">define</span> __HAVE_COLUMN </span><span class="token comment" spellcheck="true">/* temporary */</span>
+  <span class="token comment" spellcheck="true">/* 1+column number of pbase(); 0 is unknown. */</span>
+  <span class="token keyword">unsigned</span> <span class="token keyword">short</span> _cur_column<span class="token punctuation">;</span>
+  <span class="token keyword">signed</span> <span class="token keyword">char</span> _vtable_offset<span class="token punctuation">;</span>
+  <span class="token keyword">char</span> _shortbuf<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+  <span class="token comment" spellcheck="true">/*  char* _save_gptr;  char* _save_egptr; */</span>
+
+  _IO_lock_t <span class="token operator">*</span>_lock<span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">ifdef</span> _IO_USE_OLD_IO_FILE</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+<span class="token keyword">struct</span> _IO_FILE_complete
+<span class="token punctuation">{</span>
+  <span class="token keyword">struct</span> _IO_FILE _file<span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">endif</span></span>
+<span class="token macro property">#<span class="token directive keyword">if</span> defined _G_IO_IO_FILE_VERSION &amp;&amp; _G_IO_IO_FILE_VERSION == 0x20001</span>
+  _IO_off64_t _offset<span class="token punctuation">;</span>
+<span class="token macro property"># <span class="token directive keyword">if</span> defined _LIBC || defined _GLIBCPP_USE_WCHAR_T</span>
+  <span class="token comment" spellcheck="true">/* Wide character stream stuff.  */</span>
+  <span class="token keyword">struct</span> _IO_codecvt <span class="token operator">*</span>_codecvt<span class="token punctuation">;</span>
+  <span class="token keyword">struct</span> _IO_wide_data <span class="token operator">*</span>_wide_data<span class="token punctuation">;</span>
+  <span class="token keyword">struct</span> _IO_FILE <span class="token operator">*</span>_freeres_list<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>_freeres_buf<span class="token punctuation">;</span>
+<span class="token macro property"># <span class="token directive keyword">else</span></span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>__pad1<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>__pad2<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>__pad3<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>__pad4<span class="token punctuation">;</span>
+<span class="token macro property"># <span class="token directive keyword">endif</span></span>
+  size_t __pad5<span class="token punctuation">;</span>
+  <span class="token keyword">int</span> _mode<span class="token punctuation">;</span>
+  <span class="token comment" spellcheck="true">/* Make sure we don't get into trouble again.  */</span>
+  <span class="token keyword">char</span> _unused2<span class="token punctuation">[</span><span class="token number">15</span> <span class="token operator">*</span> <span class="token keyword">sizeof</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">4</span> <span class="token operator">*</span> <span class="token keyword">sizeof</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token keyword">sizeof</span> <span class="token punctuation">(</span>size_t<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token macro property">#<span class="token directive keyword">endif</span></span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+<p>对于_IO_FILE_plus结构体来说，就是上述结构体的基础上封装了一个跳转表</p>
+<pre class=" language-c"><code class="language-c"><span class="token keyword">struct</span> _IO_FILE_plus
+<span class="token punctuation">{</span>
+  _IO_FILE file<span class="token punctuation">;</span>
+  <span class="token keyword">const</span> <span class="token keyword">struct</span> _IO_jump_t <span class="token operator">*</span>vtable<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+<p>其中值得关注的部分如下：</p>
+<pre class=" language-c"><code class="language-c"> <span class="token keyword">int</span> _flags<span class="token punctuation">;</span>        <span class="token comment" spellcheck="true">/* High-order word is _IO_MAGIC; rest is flags. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_ptr<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Current read pointer */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_end<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* End of get area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_base<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Start of putback+get area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_base<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Start of put area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_ptr<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Current put pointer. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_end<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* End of put area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_buf_base<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* Start of reserve area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_buf_end<span class="token punctuation">;</span>    <span class="token comment" spellcheck="true">/* End of reserve area. */</span>
+  <span class="token keyword">int</span> _fileno<span class="token punctuation">;</span>  <span class="token comment" spellcheck="true">//文件描述符</span>
+  <span class="token keyword">int</span> _mode<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//文件操作模式</span>
+  <span class="token keyword">struct</span> _IO_FILE <span class="token operator">*</span>_chain<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//指向下一个FILE结构体</span>
+  <span class="token keyword">struct</span> _IO_jump_t <span class="token operator">*</span>vtable  <span class="token comment" spellcheck="true">//函数跳转表，这个很重要</span>
+</code></pre>
+<p>vtable是指向_IO_jump_t结构体类型的指针，_IO_jumpt_t结构体的定义如下：</p>
+<pre class=" language-c"><code class="language-c"><span class="token keyword">struct</span> _IO_jump_t
+<span class="token punctuation">{</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>size_t<span class="token punctuation">,</span> __dummy<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>size_t<span class="token punctuation">,</span> __dummy2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_finish_t<span class="token punctuation">,</span> __finish<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_overflow_t<span class="token punctuation">,</span> __overflow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_underflow_t<span class="token punctuation">,</span> __underflow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_underflow_t<span class="token punctuation">,</span> __uflow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_pbackfail_t<span class="token punctuation">,</span> __pbackfail<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">/* showmany */</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_xsputn_t<span class="token punctuation">,</span> __xsputn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_xsgetn_t<span class="token punctuation">,</span> __xsgetn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_seekoff_t<span class="token punctuation">,</span> __seekoff<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_seekpos_t<span class="token punctuation">,</span> __seekpos<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_setbuf_t<span class="token punctuation">,</span> __setbuf<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_sync_t<span class="token punctuation">,</span> __sync<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_doallocate_t<span class="token punctuation">,</span> __doallocate<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_read_t<span class="token punctuation">,</span> __read<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_write_t<span class="token punctuation">,</span> __write<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_seek_t<span class="token punctuation">,</span> __seek<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_close_t<span class="token punctuation">,</span> __close<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_stat_t<span class="token punctuation">,</span> __stat<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_showmanyc_t<span class="token punctuation">,</span> __showmanyc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_imbue_t<span class="token punctuation">,</span> __imbue<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+<p>这里面的函数都是在IO操作中可能用到的，也是我们进行劫持的主要地方。<br>其它的赋值相关具体细节可以看fopen系列源码。</p>
+<h2 id="IO-FILE-攻击要点"><a href="#IO-FILE-攻击要点" class="headerlink" title="IO_FILE 攻击要点"></a>IO_FILE 攻击要点</h2><h3 id="IO调用的vtable-函数"><a href="#IO调用的vtable-函数" class="headerlink" title="IO调用的vtable 函数"></a>IO调用的vtable 函数</h3><p>fopen函数是在分配空间，建立FILE结构体，未调用vtable中的函数。</p>
+<p>fread函数中调用的vtable函数有：</p>
+<p>•     _IO_sgetn函数调用了vtable的_IO_file_xsgetn。</p>
+<p>• _IO_doallocbuf函数调用了vtable的_IO_file_doallocate以初始化输入缓冲区。</p>
+<p>•vtable中的_IO_file_doallocate调用了vtable中的<strong>GI</strong>IO_file_stat以获取文件信息。_</p>
+<p>_•__underflow函数调用了vtable中的_IO_new_file_underflow实现文件数据读取。</p>
+<p>•  vtable中的_IO_new_file_underflow调用了vtable__GI__IO_file_read最终去执行系统调用read。</p>
+<p>fwrite 函数调用的vtable函数有：</p>
+<p>•     _IO_fwrite函数调用了vtable的_IO_new_file_xsputn。</p>
+<p>•_IO_new_file_xsputn函数调用了vtable中的_IO_new_file_overflow实现缓冲区的建立以及刷新缓冲区。</p>
+<p>•vtable中的_IO_new_file_overflow函数调用了vtable的_IO_file_doallocate以初始化输入缓冲区。</p>
+<p>•vtable中的_IO_file_doallocate调用了vtable中的<strong>GI</strong>IO_file_stat以获取文件信息。_</p>
+<p>_•new_do_write中的_IO_SYSWRITE调用了vtable_IO_new_file_write最终去执行系统调用write。</p>
+<p>fclose函数调用的vtable函数有：</p>
+<p>•    在清空缓冲区的_IO_do_write函数中会调用vtable中的函数。_</p>
+<p>_•关闭文件描述符_IO_SYSCLOSE函数为vtable中的<strong>close函数。</strong></p>
+<p><strong>•_IO_FINISH函数为vtable中的</strong>finish函数。</p>
+<p>其他的IO函数功能相类似的调用的应该都差不多，可以参考下。</p>
+<h3 id="FSOP"><a href="#FSOP" class="headerlink" title="FSOP"></a>FSOP</h3><p>IO_FILE结构体通过_IO_link_in函数链接进入_IO_list_all，我们可以伪造IO_FILE结构体来实现劫持。<br>glibc中有一个函数_IO_flush_all_lockp，该函数的功能是刷新所有FILE结构体的输出缓冲区</p>
+<p>实上，会_IO_flush_all_lockp调用函数的时机包括：</p>
+<p>•    libc执行abort函数时。<br>•    程序执行exit函数时。<br>•    程序从main函数返回时。</p>
+<h2 id="IO-FILE-攻击构造"><a href="#IO-FILE-攻击构造" class="headerlink" title="IO_FILE 攻击构造"></a>IO_FILE 攻击构造</h2><h3 id="glibc-2-23-伪造vtable"><a href="#glibc-2-23-伪造vtable" class="headerlink" title="glibc 2.23 伪造vtable"></a>glibc 2.23 伪造vtable</h3><p>类似于实现堆块任意分配的时候，我们可以在vtable 附近找合适的堆块，改写vtable的地址（注意是在libc的数据段上），然后在合适的偏移处写上one gadget，那么调用相对于vtable函数的时候就会调用one gadget，具体伪造方式也写在下面哪个2.24里面了。</p>
+<h3 id="glibc-2-24开始的vtable-check及其绕过"><a href="#glibc-2-24开始的vtable-check及其绕过" class="headerlink" title="glibc 2.24开始的vtable check及其绕过"></a>glibc 2.24开始的vtable check及其绕过</h3><p>这个博客里面有细讲，这里具体说一下怎么构造。可以根据这个看，这是一个正常的IO结构体</p>
+<pre><code>pwndbg&gt; p *_IO_list_all
+$1 = {
+  file = {
+    _flags = -72540025,  #这里是伪造成0
+    _IO_read_ptr = 0x7f5769d605a3 &lt;_IO_2_1_stderr_+131&gt; &quot;&quot;, #有检查的话这里就要伪造成合适的size 0x61或者0xb1之类的。 
+    _IO_read_end = 0x7f5769d605a3 &lt;_IO_2_1_stderr_+131&gt; &quot;&quot;, 
+    _IO_read_base = 0x7f5769d605a3 &lt;_IO_2_1_stderr_+131&gt; &quot;&quot;, 
+    _IO_write_base = 0x7f5769d605a3 &lt;_IO_2_1_stderr_+131&gt; &quot;&quot;, 这里是0
+    _IO_write_ptr = 0x7f5769d605a3 &lt;_IO_2_1_stderr_+131&gt; &quot;&quot;,  这里是1，其实就是_IO_write_ptr  &gt; _IO_write_base的一个绕过
+    _IO_write_end = 0x7f5769d605a3 &lt;_IO_2_1_stderr_+131&gt; &quot;&quot;, 
+    _IO_buf_base = 0x7f5769d605a3 &lt;_IO_2_1_stderr_+131&gt; &quot;&quot;,  #binsh指针，因为它会被当成参数
+    _IO_buf_end = 0x7f5769d605a4 &lt;_IO_2_1_stderr_+132&gt; &quot;&quot;, 
+    _IO_save_base = 0x0, 
+    _IO_backup_base = 0x0, 
+    _IO_save_end = 0x0, 
+    _markers = 0x0, 
+    _chain = 0x7f5769d60600 &lt;_IO_2_1_stdout_&gt;, 
+    _fileno = 2, 
+    _flags2 = 0, 
+    _old_offset = -1, 
+    _cur_column = 0, 
+    _vtable_offset = 0 &#39;\000&#39;, 
+    _shortbuf = &quot;&quot;, 
+    _lock = 0x7f5769d61750 &lt;_IO_stdfile_2_lock&gt;, 
+    _offset = -1, 
+    _codecvt = 0x0, 
+    _wide_data = 0x7f5769d5f640 &lt;_IO_wide_data_2&gt;, 
+    _freeres_list = 0x0, 
+    _freeres_buf = 0x0, 
+    __pad5 = 0, 
+    _mode = 0, # 这里要小于等于0
+    _unused2 = &#39;\000&#39; &lt;repeats 19 times&gt;
+  }, 
+  vtable = 0x7f5769d5c440 &lt;__GI__IO_file_jumps&gt; #伪造成fake_table，有检查的话就是_IO_str_jumps的地址-8
+}
+后面跟上system的地址或者，one gadget，这都是根据偏移算出的。
+</code></pre><h2 id="IO-任意写"><a href="#IO-任意写" class="headerlink" title="IO 任意写"></a>IO 任意写</h2><p>1.设置<code>_IO_read_end</code>等于<code>_IO_read_ptr</code>。</p>
+<p>2.设置<code>_flag &amp;~ _IO_NO_READS</code>即<code>_flag &amp;~ 0x4</code>。</p>
+<p>3.设置<code>_fileno</code>为0。</p>
+<p>4.设置<code>_IO_buf_base</code>为<code>write_start</code>，<code>_IO_buf_end</code>为<code>write_end</code>；且使得<code>_IO_buf_end-_IO_buf_base</code>大于fread要读的数据。</p>
+<h2 id="IO任意读"><a href="#IO任意读" class="headerlink" title="IO任意读"></a>IO任意读</h2><p>stdout会将数据拷贝至输出缓冲区，并将输出缓冲区中的数据输出出来，所以如果可控stdout结构体，通过构造可实现利用其进行任意地址读以及任意地址写。</p>
+<p>这里面就是改flag的值，并且把write_base的最后一个字节置NULL一般就可以泄露了。</p>
+
+            </div>
+            <hr>
+
+            
+
+            <link rel="stylesheet" type="text/css" href="/libs/share/css/share.min.css">
+
+<div id="article-share">
+    
+    <div class="social-share" data-disabled="qzone" data-wechat-qrcode-helper="<p>微信里点“发现”->“扫一扫”二维码便可查看分享。</p>"></div>
+    
+</div>
+
+<script src="/libs/share/js/social-share.min.js"></script>
+
+            
+
+    <div class="reprint" id="reprint-statement">
+        <p class="reprint-tip">
+            <i class="fa fa-exclamation-triangle"></i>&nbsp;&nbsp;
+            <span>转载规则</span>
+        </p>
+        
+            <div class="center-align">
+                <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
+                    <img alt style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png">
+                </a>
+            </div>
+            <br>
+            <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
+                    《IO攻击总结》
+                </span> 由
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2020/02/10/io-gong-ji-zong-jie/" property="cc:attributionName" rel="cc:attributionURL">
+                时钟
+            </a> 采用
+            <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
+                知识共享署名 4.0 国际许可协议
+            </a>进行许可。
+        
+    </div>
+
+    <script async defer>
+      document.addEventListener("copy", function (e) {
+        let toastHTML = '<span>复制成功，请遵循本文的转载规则</span><button class="btn-flat toast-action" onclick="navToReprintStatement()" style="font-size: smaller">查看</a>';
+        M.toast({html: toastHTML})
+      });
+
+      function navToReprintStatement() {
+        $("html, body").animate({scrollTop: $("#reprint-statement").offset().top - 80}, 800);
+      }
+    </script>
+
+
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
+            </div>
+            <div class="card">
+                <a href="/2020/02/10/io-gong-ji-zong-jie/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="IO攻击总结">
+                        
+                        <span class="card-title">IO攻击总结</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            IO攻击总结_IO_FILE结构体相关truct _IO_FILE {
+  int _flags;        /* High-order word is _IO_MAGIC; rest is flags. */
+#define _IO_
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-10
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/2020/02/10/glibc-2-24-kai-shi-de-vtable-check-ji-qi-rao-guo/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="glibc 2.24开始的vtable check及其绕过">
+                        
+                        <span class="card-title">glibc 2.24开始的vtable check及其绕过</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            glibc 2.24开始的vtable check及其绕过原理在2.23及其之前，IO结构体里面的vtable里面的相关函数在调用的时候不存在检查，这就使得容易被构造从而使得vtable容易被攻击。
+在此基础之上glibc 2.24加入了v
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-10
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+</div>
+
+
+<script>
+    $('#articleContent').on('copy', function (e) {
+        // IE8 or earlier browser is 'undefined'
+        if (typeof window.getSelection === 'undefined') return;
+
+        var selection = window.getSelection();
+        // if the selection is short let's not annoy our users.
+        if (('' + selection).length < Number.parseInt('120')) {
+            return;
+        }
+
+        // create a div outside of the visible area and fill it with the selected text.
+        var bodyElement = document.getElementsByTagName('body')[0];
+        var newdiv = document.createElement('div');
+        newdiv.style.position = 'absolute';
+        newdiv.style.left = '-99999px';
+        bodyElement.appendChild(newdiv);
+        newdiv.appendChild(selection.getRangeAt(0).cloneContents());
+
+        // we need a <pre> tag workaround.
+        // otherwise the text inside "pre" loses all the line breaks!
+        if (selection.getRangeAt(0).commonAncestorContainer.nodeName === 'PRE') {
+            newdiv.innerHTML = "<pre>" + newdiv.innerHTML + "</pre>";
+        }
+
+        var url = document.location.href;
+        newdiv.innerHTML += '<br />'
+            + '来源: 时钟<br />'
+            + '作者: 时钟<br />'
+            + '链接: <a href="' + url + '">' + url + '</a><br />'
+            + '本文章著作权归作者所有，任何形式的转载都请注明出处。';
+
+        selection.selectAllChildren(newdiv);
+        window.setTimeout(function () {bodyElement.removeChild(newdiv);}, 200);
+    });
+</script>
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget">
+            <div class="toc-title"><i class="fa fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fa fa-list"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('#articleContent').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).slideUp(500);
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).slideDown(500);
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+    
+
+</main>
+
+
+<footer class="page-footer bg-color">
+    <div class="container row center-align">
+        <div class="col s12 m8 l8 copy-right">
+            本站由&copy;<a href="https://blinkfox.github.io/" target="_blank">Blinkfox</a>基于
+            <a href="https://hexo.io/" target="_blank">Hexo</a> 的
+            <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">hexo-theme-matery</a>主题搭建.
+
+            
+                &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
+                <span class="white-color">45.7k</span>
+            
+
+            
+			
+                <br>
+                
+                <span id="busuanzi_container_site_pv">
+                    <i class="fa fa-heart-o"></i>
+                    本站总访问量 <span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+                
+                
+                <span id="busuanzi_container_site_uv">
+                    <i class="fa fa-users"></i>
+                    次,&nbsp;访客数 <span id="busuanzi_value_site_uv" class="white-color"></span> 人.
+                </span>
+                
+            
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/shizhongpwn/pwnstudy" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fa fa-github"></i>
+    </a>
+
+
+
+    <a href="mailto:522796871@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+        <i class="fa fa-envelope-open"></i>
+    </a>
+
+
+
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=522796871" class="tooltipped" data-tooltip="QQ联系我: 522796871" data-position="top" data-delay="50">
+        <i class="fa fa-qq"></i>
+    </a>
+
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+<!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fa fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字" class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script src="/js/search.js"></script>
+<script type="text/javascript">
+$(function () {
+    searchFunc("/" + "search.xml", 'searchInput', 'searchResult');
+});
+</script>
+<!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fa fa-angle-up"></i>
+    </a>
+</div>
+
+
+<script src="/libs/materialize/materialize.min.js"></script>
+<script src="/libs/masonry/masonry.pkgd.min.js"></script>
+<script src="/libs/aos/aos.js"></script>
+<script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+<script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+<script src="/js/matery.js"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+
+    <script src="/libs/others/clicklove.js"></script>
+
+
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+
+
+</body>
+</html>

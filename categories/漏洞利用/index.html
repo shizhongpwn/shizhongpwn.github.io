@@ -275,33 +275,25 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
                 
                 
                 
-                <a href="/categories/CTF题解/" title="CTF题解: 10">
+                <a href="/categories/CTF题解/" title="CTF题解: 12">
                     <span class="chip center-align waves-effect waves-light
                              chip-default " style="background-color: #F9EBEA;">CTF题解
-                        <span class="tag-length">10</span>
+                        <span class="tag-length">12</span>
+                    </span>
+                </a>
+                
+                
+                <a href="/categories/漏洞利用/" title="漏洞利用: 13">
+                    <span class="chip center-align waves-effect waves-light
+                             chip-active " style="background-color: #F5EEF8;">漏洞利用
+                        <span class="tag-length">13</span>
                     </span>
                 </a>
                 
                 
                 <a href="/categories/加密与解密/" title="加密与解密: 1">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #F5EEF8;">加密与解密
-                        <span class="tag-length">1</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/漏洞利用/" title="漏洞利用: 9">
-                    <span class="chip center-align waves-effect waves-light
-                             chip-active " style="background-color: #D5F5E3;">漏洞利用
-                        <span class="tag-length">9</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/编程语言/" title="编程语言: 1">
-                    <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #E8F8F5;">编程语言
+                             chip-default " style="background-color: #D5F5E3;">加密与解密
                         <span class="tag-length">1</span>
                     </span>
                 </a>
@@ -309,7 +301,15 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
                 
                 <a href="/categories/逆向工程/" title="逆向工程: 1">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #FEF9E7;">逆向工程
+                             chip-default " style="background-color: #E8F8F5;">逆向工程
+                        <span class="tag-length">1</span>
+                    </span>
+                </a>
+                
+                
+                <a href="/categories/编程语言/" title="编程语言: 1">
+                    <span class="chip center-align waves-effect waves-light
+                             chip-default " style="background-color: #FEF9E7;">编程语言
                         <span class="tag-length">1</span>
                     </span>
                 </a>
@@ -324,6 +324,196 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
 
     <article id="articles" class="container articles">
         <div class="row tags-posts">
+            
+            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/02/10/io-gong-ji-zong-jie/">
+                        <div class="card-image tag-image">
+                            
+                            
+                            <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="IO攻击总结">
+                            
+                            <span class="card-title">IO攻击总结</span>
+                        </div>
+                    </a>
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                IO攻击总结_IO_FILE结构体相关truct _IO_FILE {
+  int _flags;        /* High-order word is _IO_MAGIC; rest is flags. */
+#define _IO_
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-10
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/02/10/glibc-2-24-kai-shi-de-vtable-check-ji-qi-rao-guo/">
+                        <div class="card-image tag-image">
+                            
+                            
+                            <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="glibc 2.24开始的vtable check及其绕过">
+                            
+                            <span class="card-title">glibc 2.24开始的vtable check及其绕过</span>
+                        </div>
+                    </a>
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                glibc 2.24开始的vtable check及其绕过原理在2.23及其之前，IO结构体里面的vtable里面的相关函数在调用的时候不存在检查，这就使得容易被构造从而使得vtable容易被攻击。
+在此基础之上glibc 2.24加入了v
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-10
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/02/10/house-of-eingherjar/">
+                        <div class="card-image tag-image">
+                            
+                            
+                            <img src="/medias/featureimages/4.jpg" class="responsive-img" alt="House Of Eingherjar">
+                            
+                            <span class="card-title">House Of Eingherjar</span>
+                        </div>
+                    </a>
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                House Of Eingherjar这种技术实际上就是利用free时候的操作。
+  /* consolidate backward */
+        if (!prev_inuse(p)) {
+            prevsize
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-10
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/02/10/house-of-force/">
+                        <div class="card-image tag-image">
+                            
+                            
+                            <img src="/medias/featureimages/6.jpg" class="responsive-img" alt="House of Force">
+                            
+                            <span class="card-title">House of Force</span>
+                        </div>
+                    </a>
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                House of Force原理  glibc在空闲堆块无法满足要求的情况下会对top chunk进行操作，从它哪里得到新的满足用户需求的chunk块，House of Force的主要目标就是top chunk,我们如果可以控制top c
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-10
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
             
             <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
@@ -716,59 +906,32 @@ free检查会看size的低字节flag的IS_
                 </div>
             </div>
             
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/08/02/glibc-heap-unlink-lou-dong/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="glibc heap unlink漏洞">
-                            
-                            <span class="card-title">glibc heap unlink漏洞</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                知识点：
-
-free操作会检查前后相邻堆块是否in_use，空闲的话就会进行合并操作
-空闲的堆块一般以双向链表的形式存在（fastbin是单向链表不适用此种攻击）
-unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并操作，那么需
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-02
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
-                                    漏洞利用
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn/" target="_blank">
-                            <span class="chip bg-color">pwn</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
         </div>
     </article>
 </main>
+
+
+<div class="container paging">
+    <div class="row">
+        <div class="col s6 m4 l4">
+            
+            <a class="left btn-floating btn-large disabled">
+                <i class="fa fa-angle-left"></i>
+            </a>
+            
+        </div>
+        <div class="page-info col m4 l4 hide-on-small-only">
+            <div class="center-align b-text-gray">1 / 2</div>
+        </div>
+        <div class="col s6 m4 l4">
+            
+            <a href="/categories/漏洞利用/page/2/" class="right btn-floating btn-large waves-effect waves-light bg-color">
+                <i class="fa fa-angle-right"></i>
+            </a>
+            
+        </div>
+    </div>
+</div>
 
 
 <footer class="page-footer bg-color">
@@ -780,7 +943,7 @@ unlink : 如果刚释放的堆块要与前面或者后面的堆块进行合并�
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">34k</span>
+                <span class="white-color">45.7k</span>
             
 
             
