@@ -275,6 +275,102 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
             
             <div class="article col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
+                    <a href="/2020/01/30/glibc-heap-unsorted-bin-attack/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/6.jpg" class="responsive-img" alt="glibc heap unsorted bin attack">
+                            
+                            <span class="card-title">glibc heap unsorted bin attack</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                unsorted bin 基本简介：    1.它是一种双向链表的形式， 采用FILO的遍历形式。    2.我们知道malloc的时候最先寻找fastbin, 但是当fastbin里面没有合适的chunk的时候，它会去寻找small bi
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                    漏洞利用
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/01/30/buu/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="buu">
+                            
+                            <span class="card-title">buu</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                babyheap_0ctf_2017这个题目保护全开，我们分析一下它的数据结构：
+
+可以看出，在一个程序分配出的地址上，存储了堆块是否被使用的flag,和堆块的size和堆块的内存指针，同时值得注意的是calloc，它和malloc有所不同
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
                     <a href="/2020/01/30/glibc-2-23-malloc-yuan-ma-shen-ji/">
                         <div class="card-image">
                             
@@ -666,104 +762,6 @@ babyarm这个题目并不难，难在于它是一个arm的架构，所以难以�
                 </div>
             </div>
             
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/09/17/32-wei-ni-xiang-fen-xi-ji-zhu/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/18.jpg" class="responsive-img" alt="32位逆向分析技术">
-                            
-                            <span class="card-title">32位逆向分析技术</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                汇编指令
-ret n : 在ret指令后给栈指针加上操作数
-test eax,eax 如果eax的值为0，那么逻辑与的运算结果为0，设置ZF为1，否则ZF为0 
-lea ：加载有效地址
-sar : 有符号数右位移指令，这个是算术右位移，补全
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-09-17
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/加密与解密/" class="post-category" target="_blank">
-                                    加密与解密
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/reverse/" target="_blank">
-                            <span class="chip bg-color">reverse</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/09/17/hui-bian-zhi-shi-dian/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="汇编知识点">
-                            
-                            <span class="card-title">汇编知识点</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                汇编中补码转换1.补码可以先减1，然后按位取反。2.从右往左遇见第一个1不变，然后向左按位取反（符号位除外）3.对于16进制数 ：取反的方法就是用15减去改数字中的每一位 ：6A3D –&gt; 95C2+1 –&gt; 95C3 （这只是
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-09-17
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/编程语言/" class="post-category" target="_blank">
-                                    编程语言
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/汇编语言/" target="_blank">
-                            <span class="chip bg-color">汇编语言</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
         </div>
     </article>
 
@@ -780,7 +778,7 @@ sar : 有符号数右位移指令，这个是算术右位移，补全
             
         </div>
         <div class="page-info col m4 l4 hide-on-small-only">
-            <div class="center-align b-text-gray">2 / 3</div>
+            <div class="center-align b-text-gray">2 / 4</div>
         </div>
         <div class="col s6 m4 l4">
             
@@ -803,7 +801,7 @@ sar : 有符号数右位移指令，这个是算术右位移，补全
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">46.8k</span>
+                <span class="white-color">50.1k</span>
             
 
             

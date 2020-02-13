@@ -1,0 +1,1040 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+    <meta name="keywords" content="large bin attack原理, 时钟">
+    <meta name="description" content="large bin attack – glibc 2.23在malloc 的源码里面，把非small bin的部分定义为large bin,在64位的系统里面大于MIN_LARGE_SIZE为640x10即0x400的chunk为large">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>large bin attack原理 | 时钟</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="/css/my.css">
+    <style type="text/css">
+        
+    </style>
+
+    <script src="/libs/jquery/jquery-2.2.0.min.js"></script>
+<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css"></head>
+
+
+<body>
+
+<header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">时钟</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fa fa-navicon"></i></a>
+<ul class="right">
+    
+    <li class="hide-on-med-and-down">
+        <a href="/" class="waves-effect waves-light">
+            
+            <i class="fa fa-home"></i>
+            
+            <span>首页</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/tags" class="waves-effect waves-light">
+            
+            <i class="fa fa-tags"></i>
+            
+            <span>标签</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/categories" class="waves-effect waves-light">
+            
+            <i class="fa fa-bookmark"></i>
+            
+            <span>分类</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/archives" class="waves-effect waves-light">
+            
+            <i class="fa fa-archive"></i>
+            
+            <span>归档</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/about" class="waves-effect waves-light">
+            
+            <i class="fa fa-user-circle-o"></i>
+            
+            <span>关于</span>
+        </a>
+    </li>
+    
+    <li>
+        <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+            <i id="searchIcon" class="fa fa-search" title="搜索"></i>
+        </a>
+    </li>
+</ul>
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">时钟</div>
+        <div class="logo-desc">
+            
+            二进制小白进阶之路
+            
+        </div>
+    </div>
+
+    
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li>
+            <a href="/" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-home"></i>
+                
+                首页
+            </a>
+        </li>
+        
+        <li>
+            <a href="/tags" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-tags"></i>
+                
+                标签
+            </a>
+        </li>
+        
+        <li>
+            <a href="/categories" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-bookmark"></i>
+                
+                分类
+            </a>
+        </li>
+        
+        <li>
+            <a href="/archives" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-archive"></i>
+                
+                归档
+            </a>
+        </li>
+        
+        <li>
+            <a href="/about" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-user-circle-o"></i>
+                
+                关于
+            </a>
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/shizhongpwn/pwnstudy" class="waves-effect waves-light" target="_blank">
+                <i class="fa fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #0f9d58;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/shizhongpwn/pwnstudy" class="github-corner tooltipped hide-on-med-and-down" target="_blank" data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewbox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/11.jpg')">
+    <div class="container">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <div class="description center-align post-title">
+                        large bin attack原理
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<main class="post-container content">
+
+    
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+<style>
+    #articleContent h1::before,
+    #articleContent h2::before,
+    #articleContent h3::before,
+    #articleContent h4::before,
+    #articleContent h5::before,
+    #articleContent h6::before {
+        display: block;
+        content: " ";
+        height: 100px;
+        margin-top: -100px;
+        visibility: hidden;
+    }
+
+    #articleContent :focus {
+        outline: none;
+    }
+
+    .toc-fixed {
+        position: fixed;
+        top: 64px;
+    }
+
+    .toc-widget {
+        padding-left: 20px;
+    }
+
+    .toc-widget .toc-title {
+        margin: 35px 0 15px 0;
+        padding-left: 17px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1.5rem;
+    }
+
+    .toc-widget ol {
+        padding: 0;
+        list-style: none;
+    }
+
+    #toc-content ol {
+        padding-left: 10px;
+    }
+
+    #toc-content ol li {
+        padding-left: 10px;
+    }
+
+    #toc-content .toc-link:hover {
+        color: #42b983;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    #toc-content .toc-link::before {
+        background-color: transparent;
+        max-height: 25px;
+    }
+
+    #toc-content .is-active-link {
+        color: #42b983;
+    }
+
+    #toc-content .is-active-link::before {
+        background-color: #42b983;
+    }
+
+    #floating-toc-btn {
+        position: fixed;
+        right: 20px;
+        bottom: 76px;
+        padding-top: 15px;
+        margin-bottom: 0;
+        z-index: 998;
+    }
+
+    #floating-toc-btn .btn-floating {
+        width: 48px;
+        height: 48px;
+    }
+
+    #floating-toc-btn .btn-floating i {
+        line-height: 48px;
+        font-size: 1.4rem;
+    }
+</style>
+<div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/pwn/" target="_blank">
+                                <span class="chip bg-color">pwn</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fa fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/漏洞利用/" class="post-category" target="_blank">
+                                漏洞利用
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                <div class="post-date info-break-policy">
+                    <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2020-02-13
+                </div>
+
+                
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
+                        2.4k
+                    </div>
+                    
+
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                        10 分
+                    </div>
+                    
+                
+				
+				
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="fa fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+        </div>
+        <hr class="clearfix">
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h1 id="large-bin-attack-–-glibc-2-23"><a href="#large-bin-attack-–-glibc-2-23" class="headerlink" title="large bin attack – glibc 2.23"></a>large bin attack – glibc 2.23</h1><p>在malloc 的源码里面，把非small bin的部分定义为large bin,在64位的系统里面大于MIN_LARGE_SIZE为64<em>0x10即0x400的chunk为largebin，而32位系统中大于MIN_LARGE_SIZE为64</em>0x8即0x200的chunk位largebin。</p>
+<h2 id="存储方式"><a href="#存储方式" class="headerlink" title="存储方式"></a>存储方式</h2><p>large bin采用等差数列的方式进行，即是一个idx对应一组大小不同的chunk，定义：</p>
+<pre class=" language-c"><code class="language-c"><span class="token macro property">#<span class="token directive keyword">define</span> largebin_index_64(sz)                                                \
+  (((((unsigned long) (sz)) >> 6) &lt;= 48) ?  48 + (((unsigned long) (sz)) >> 6) :\
+   ((((unsigned long) (sz)) >> 9) &lt;= 20) ?  91 + (((unsigned long) (sz)) >> 9) :\
+   ((((unsigned long) (sz)) >> 12) &lt;= 10) ? 110 + (((unsigned long) (sz)) >> 12) :\
+   ((((unsigned long) (sz)) >> 15) &lt;= 4) ? 119 + (((unsigned long) (sz)) >> 15) :\
+   ((((unsigned long) (sz)) >> 18) &lt;= 2) ? 124 + (((unsigned long) (sz)) >> 18) :\
+   126)</span>
+</code></pre>
+<p>在同样的idx的bin里面chunk排序方式：<br>•堆块从大到小排序。<br>•对于相同大小的堆块，最先释放的堆块会成为堆头，其fd_nextsize与bk_nextsize会被赋值，其余的堆块释放后都会插入到该堆头结点的下一个结点，通过fd与bk链接，形成了先释放的在链表后面的排序方式，且其fd_nextsize与bk_nextsize都为0。<br>•不同大小的堆块通过堆头串联，即堆头中fd_nextsize指向比它小的堆块的堆头，bk_nextsize指向比它大的堆块的堆头，从而形成了第一点中的从大到小排序堆块的方式。同时最大的堆块的堆头的bk_nextsize指向最小的堆块的堆头，最小堆块的堆头的fd_nextsize指向最大堆块的堆头，以此形成循环双链表</p>
+<h2 id="从unsorted-bin-移入large-bin"><a href="#从unsorted-bin-移入large-bin" class="headerlink" title="从unsorted bin 移入large bin"></a>从unsorted bin 移入large bin</h2><p>源码：</p>
+<pre class=" language-c"><code class="language-c"><span class="token comment" spellcheck="true">/* place chunk in bin */</span>
+
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+              <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>  <span class="token comment" spellcheck="true">// chunk为smallbin，放入到smallbin中</span>
+            <span class="token punctuation">}</span>
+          <span class="token keyword">else</span>
+            <span class="token punctuation">{</span>
+              victim_index <span class="token operator">=</span> <span class="token function">largebin_index</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment" spellcheck="true">//第一步，获取当前要插入的chunk对应的index</span>
+              bck <span class="token operator">=</span> <span class="token function">bin_at</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim_index<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//当前index中最小的chunk</span>
+              fwd <span class="token operator">=</span> bck<span class="token operator">-></span>fd<span class="token punctuation">;</span>                   <span class="token comment" spellcheck="true">//当前index中最大的chunk</span>
+
+              <span class="token comment" spellcheck="true">/* maintain large bins in sorted order */</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>fwd <span class="token operator">!=</span> bck<span class="token punctuation">)</span>
+                <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">// 该chunk对应的largebin index中不为空</span>
+                  <span class="token comment" spellcheck="true">/* Or with inuse bit to speed comparisons */</span>
+                  size <span class="token operator">|</span><span class="token operator">=</span> PREV_INUSE<span class="token punctuation">;</span>
+                  <span class="token comment" spellcheck="true">/* if smaller than smallest, bypass loop below */</span>
+                  <span class="token function">assert</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>bck<span class="token operator">-></span>bk<span class="token operator">-></span>size <span class="token operator">&amp;</span> NON_MAIN_ARENA<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>size<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>bck<span class="token operator">-></span>bk<span class="token operator">-></span>size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//第三步，如果要插入的chunk的size小于当前index中最小chunk的大小，则直接插入到最后面。</span>
+                    <span class="token punctuation">{</span>
+                      fwd <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+                      bck <span class="token operator">=</span> bck<span class="token operator">-></span>bk<span class="token punctuation">;</span>
+
+                      victim<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> fwd<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+                      victim<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> fwd<span class="token operator">-></span>fd<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span>
+                      fwd<span class="token operator">-></span>fd<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> victim<span class="token operator">-></span>bk_nextsize<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                  <span class="token keyword">else</span>
+                    <span class="token punctuation">{</span>
+                      <span class="token function">assert</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>fwd<span class="token operator">-></span>size <span class="token operator">&amp;</span> NON_MAIN_ARENA<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                      <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> size <span class="token operator">&lt;</span> fwd<span class="token operator">-></span>size<span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//第四步，如果插入的chunk不为最小，则通过`fd_nextsize`从大到小遍历chunk，找到小于等于要插入chunk的位置</span>
+                        <span class="token punctuation">{</span>
+                          fwd <span class="token operator">=</span> fwd<span class="token operator">-></span>fd_nextsize<span class="token punctuation">;</span>
+                          <span class="token function">assert</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>fwd<span class="token operator">-></span>size <span class="token operator">&amp;</span> NON_MAIN_ARENA<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span>
+
+                      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> size <span class="token operator">==</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> fwd<span class="token operator">-></span>size<span class="token punctuation">)</span>
+                        <span class="token comment" spellcheck="true">/* Always insert in the second position.  */</span>
+                        fwd <span class="token operator">=</span> fwd<span class="token operator">-></span>fd<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//第五步，如果存在堆头，则插入到堆头的下一个节点</span>
+                      <span class="token keyword">else</span>
+                        <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">//第六步，否则这个chunk将会成为堆头，`bk_nextsize`和`fd_nextsize`将被置位</span>
+                          victim<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+                          victim<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> fwd<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span>
+                          fwd<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+                          victim<span class="token operator">-></span>bk_nextsize<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span>
+                      bck <span class="token operator">=</span> fwd<span class="token operator">-></span>bk<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span>
+              <span class="token keyword">else</span>   <span class="token comment" spellcheck="true">//第二步，chunk对应的largebin index中为空</span>
+                victim<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> victim<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+          <span class="token function">mark_bin</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim_index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token comment" spellcheck="true">//设置fd与bk完成插入</span>
+          victim<span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span> 
+          victim<span class="token operator">-></span>fd <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+          fwd<span class="token operator">-></span>bk <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+          bck<span class="token operator">-></span>fd <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+          <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token punctuation">}</span>
+</code></pre>
+<ol>
+<li>找到当前要插入的chunk对应的largebin的index，并定位该index中的最小的chunkbck和最大的chunkfwd。</li>
+<li>如果fwd等于bck，表明当前链表为空，则直接将该chunk插入，并设置该chunk为该大小堆块的堆头，将bk_nextsize和fd_nextsize赋值为它本身。</li>
+<li>如果fwd不等于bck，表明当前链表已经存在chunk，要做的就是找到当前chunk对应的位置将其插入。首先判断其大小是否小于最小chunk的size，(size) &lt; (bck-&gt;bk-&gt;size)，如果小于则说明该chunk为当前链表中最小的chunk，即插入位置在链表末尾，无需遍历链表，直接插入到链表的末尾，且该chunk没有对应的堆头，设置该chunk为相应堆大小堆的堆头，将bk_nextsize指向比它大的堆头，fd_nextsize指向双链表的第一个节点即最大的堆头。</li>
+<li>如果当前chunk的size不是最小的chunk，则从双链表的第一个节点即最大的chunk的堆头开始遍历，通过fd_nextsize进行遍历，由于fd_nextsize指向的是比当前堆头小的堆头，因此可以加快遍历速度。直到找到小于等于要插入的chunk的size。</li>
+<li>如果找到的chunk的size等于要插入chunk的size，则说明当前要插入的chunk的size已经存在堆头，那么只需将该chunk插入到堆头的下一个节点。</li>
+<li>如果找到的chunk的size小于当前要插入chunk的size，则说明当前插入的chunk不存在堆头，因此该chunk会成为堆头插入到该位置，设置fd_nextsize与bk_nextsize。</li>
+</ol>
+<h2 id="unlink"><a href="#unlink" class="headerlink" title="unlink"></a>unlink</h2><p>源码：</p>
+<pre class=" language-c"><code class="language-c">     <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+          bin <span class="token operator">=</span> <span class="token function">bin_at</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+          <span class="token comment" spellcheck="true">/* skip scan if empty or largest chunk is too small */</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>victim <span class="token operator">=</span> <span class="token function">first</span> <span class="token punctuation">(</span>bin<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> bin <span class="token operator">&amp;&amp;</span>
+              <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>victim<span class="token operator">-></span>size<span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment" spellcheck="true">//先判断申请的size是否小于large bin里面最大的chunk的size</span>
+            <span class="token punctuation">{</span>
+              victim <span class="token operator">=</span> victim<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span>
+              <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>size <span class="token operator">=</span> <span class="token function">chunksize</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span>
+                      <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>nb<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//从最小chunk开始遍历找出合适的chunk</span>
+                victim <span class="token operator">=</span> victim<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span>
+
+              <span class="token comment" spellcheck="true">/* Avoid removing the first entry for a size so that the skip
+                 list does not have to be rerouted.  */</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>victim <span class="token operator">!=</span> <span class="token function">last</span> <span class="token punctuation">(</span>bin<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> victim<span class="token operator">-></span>size <span class="token operator">==</span> victim<span class="token operator">-></span>fd<span class="token operator">-></span>size<span class="token punctuation">)</span>  <span class="token comment" spellcheck="true">//合适的size可能含有多个chunk的，如果是的话不能拿出头部哪个。</span>
+                victim <span class="token operator">=</span> victim<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+
+              remainder_size <span class="token operator">=</span> size <span class="token operator">-</span> nb<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//分割large chunk</span>
+              <span class="token function">unlink</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> bck<span class="token punctuation">,</span> fwd<span class="token punctuation">)</span><span class="token punctuation">;</span> 进行unlink
+
+              <span class="token comment" spellcheck="true">/* Exhaust */</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>remainder_size <span class="token operator">&lt;</span> MINSIZE<span class="token punctuation">)</span>
+                <span class="token punctuation">{</span>
+                  <span class="token function">set_inuse_bit_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena<span class="token punctuation">)</span>
+                    victim<span class="token operator">-></span>size <span class="token operator">|</span><span class="token operator">=</span> NON_MAIN_ARENA<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+              <span class="token comment" spellcheck="true">/* Split */</span>
+              <span class="token keyword">else</span>
+                <span class="token punctuation">{</span>
+                  remainder <span class="token operator">=</span> <span class="token function">chunk_at_offset</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token comment" spellcheck="true">/* We cannot assume the unsorted list is empty and therefore
+                     have to perform a complete insert here.  */</span>
+                  bck <span class="token operator">=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  fwd <span class="token operator">=</span> bck<span class="token operator">-></span>fd<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__glibc_unlikely</span> <span class="token punctuation">(</span>fwd<span class="token operator">-></span>bk <span class="token operator">!=</span> bck<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">{</span>
+                      errstr <span class="token operator">=</span> <span class="token string">"malloc(): corrupted unsorted chunks"</span><span class="token punctuation">;</span>
+                      <span class="token keyword">goto</span> errout<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                  remainder<span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+                  remainder<span class="token operator">-></span>fd <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+                  bck<span class="token operator">-></span>fd <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+                  fwd<span class="token operator">-></span>bk <span class="token operator">=</span> remainder<span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">in_smallbin_range</span> <span class="token punctuation">(</span>remainder_size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">{</span>
+                      remainder<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+                      remainder<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                  <span class="token function">set_head</span> <span class="token punctuation">(</span>victim<span class="token punctuation">,</span> nb <span class="token operator">|</span> PREV_INUSE <span class="token operator">|</span>
+                            <span class="token punctuation">(</span>av <span class="token operator">!=</span> <span class="token operator">&amp;</span>main_arena <span class="token operator">?</span> NON_MAIN_ARENA <span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token function">set_head</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size <span class="token operator">|</span> PREV_INUSE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token function">set_foot</span> <span class="token punctuation">(</span>remainder<span class="token punctuation">,</span> remainder_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+              <span class="token function">check_malloced_chunk</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim<span class="token punctuation">,</span> nb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">void</span> <span class="token operator">*</span>p <span class="token operator">=</span> <span class="token function">chunk2mem</span> <span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token function">alloc_perturb</span> <span class="token punctuation">(</span>p<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token keyword">return</span> p<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+</code></pre>
+<ol>
+<li>先判断申请的size是否小于large bin里面最大的chunk的size</li>
+<li>从最小chunk开始遍历找出合适的chunk</li>
+<li>分割large chunk</li>
+<li>进入unlink,跟small bin的unlink有相同之处，不过四个参数的最后两个传入的是fd_nextsize和bk_nextsize</li>
+<li>判断剩余空间是否小于MINSIZE，如果小于直接返回给用户。</li>
+<li>否则将剩余的空间构成新的chunk放入到unsorted bin中。</li>
+</ol>
+<h2 id="large-bin-操作总结"><a href="#large-bin-操作总结" class="headerlink" title="large bin 操作总结"></a>large bin 操作总结</h2><p>至此largebin链表的形成以及申请largebin都已经阐述清楚。再小结下，对于largebin的链表的插入，双链表是从大到小的chunk排序，相同大小的chunk会有一个堆头，只有堆头的fd_nextsize与bk_nextsize会被赋值，其余堆块的该字段为0。插入的遍历是通过fd_nextsize从大到小进行的，如果该插入的chunk存在对应堆头，则插入到该堆头的下一个结点，否则的话该chunk会成为堆头插入到链表中。</p>
+<p>对于largebin的申请，通过判断双链表的第一个结点（最大结点）的大小来判断是否存在满足的堆块，如果有则从小到大通过bk_nextsize反向遍历双链表，找到最小的满足申请需求的堆块，如果该堆头下一个结点的大小也满足则将该结点作为目标分配给用户，以此减少链表的fd_nextsize与bk_nextsize操作，提高效率。对于双链表的unlink，需要注意的就是fd_nextsize与bk_nextsize检查，特别需要注意的是当结点是堆头的下一个结点时，它的fd_nextsize与bk_nextsize为0，此时unlink操作与smallbin的unlink操作一致，没有fd_nextsize与bk_nextsize的检查与操作。</p>
+<h2 id="large-bin-attack-方式"><a href="#large-bin-attack-方式" class="headerlink" title="large bin attack 方式"></a>large bin attack 方式</h2><p>• 在申请largebin的过程中，伪造largebin的bk_nextsize，实现非预期内存申请。<br>• 在largebin插入的过程中，伪造largebin的bk_nextsize以及bk，实现任意地址写堆地址。</p>
+<h3 id="伪造伪造largebin的bk-nextsize"><a href="#伪造伪造largebin的bk-nextsize" class="headerlink" title="伪造伪造largebin的bk_nextsize"></a>伪造伪造largebin的bk_nextsize</h3><p>问题出现在通过bk_nextsize反向遍历双链表的过程，如果能够伪造某个堆头结点中的bk_nextsize，将其指向非预期的内存地址，构造好数据使得非预期内存地址在通过unlink的检查之后，会将该空间返回给用户，最终使得可以申请出非预期的内存。最常见的就是用它来构造overlap chunk。</p>
+<p>至于绕过unlink的检查，最好的方式就是伪造的内存空间将fd与bk按照smallbinunlink的利用方式设置，而将bk_nextsize和fd_nextsize设置成0，这样就不会对这两个字段进行操作了。</p>
+<h3 id="伪造largebin的bk-nextsize以及bk"><a href="#伪造largebin的bk-nextsize以及bk" class="headerlink" title="伪造largebin的bk_nextsize以及bk"></a>伪造largebin的bk_nextsize以及bk</h3><pre class=" language-c"><code class="language-c">          <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token comment" spellcheck="true">//将largebin从unsorted bin中取下</span>
+          <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span>
+          bck<span class="token operator">-></span>fd <span class="token operator">=</span> <span class="token function">unsorted_chunks</span> <span class="token punctuation">(</span>av<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+          <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+                         <span class="token comment" spellcheck="true">//否则这个chunk将会成为堆头，`bk_nextsize`和`fd_nextsize`将被置位</span>
+                          victim<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+                          victim<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> fwd<span class="token operator">-></span>bk_nextsize<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//由于fwd->bk_nextsize可控，因此victim->bk_nextsize可控</span>
+                          fwd<span class="token operator">-></span>bk_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+                          victim<span class="token operator">-></span>bk_nextsize<span class="token operator">-></span>fd_nextsize <span class="token operator">=</span> victim<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//victim->bk_nextsize可控，因此实现了往任意地址写victim的能力</span>
+                        <span class="token punctuation">}</span>
+                      bck <span class="token operator">=</span> fwd<span class="token operator">-></span>bk<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//由于fwd->bk可控，因此bck可控</span>
+                 <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+          <span class="token function">mark_bin</span> <span class="token punctuation">(</span>av<span class="token punctuation">,</span> victim_index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token comment" spellcheck="true">//设置fd与bk完成插入</span>
+          victim<span class="token operator">-></span>bk <span class="token operator">=</span> bck<span class="token punctuation">;</span> 
+          victim<span class="token operator">-></span>fd <span class="token operator">=</span> fwd<span class="token punctuation">;</span>
+          fwd<span class="token operator">-></span>bk <span class="token operator">=</span> victim<span class="token punctuation">;</span>
+          bck<span class="token operator">-></span>fd <span class="token operator">=</span> victim<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">//bck可控，因此实现了往任意地址写victim的能力</span>
+          <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token punctuation">}</span>
+</code></pre>
+<p>这样利用伪造在largebin中的bk_nextsize与bk，我们获得了两次任意地址写堆地址的能力。我们可以写global_max_fast，这样就可以扩大fast bin的范围进而实现fast bin attack.</p>
+<h3 id="house-of-storm"><a href="#house-of-storm" class="headerlink" title="house of storm"></a>house of storm</h3><p>利用伪造在largebin中的<code>bk_nextsize</code>与<code>bk</code>，我们获得了两次任意地址写堆地址的能力。除了覆盖<code>global_max_fast</code>之外，另一种用法则是house-of-storm，与unsorted bin attack的结合可以使得该利用方法变成任意可以内存申请的攻击方式。</p>
+<p>这个就是利用unsorted bin attack把对应链表的bk改成堆地址，large bin attack 实现堆块伪造，进而在下一次unsorted bin 分配的时候可以实现任意堆块的分配。</p>
+<p>举个demo</p>
+<pre class=" language-c"><code class="language-c">A<span class="token operator">=</span><span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x400</span><span class="token operator">-</span><span class="token number">0x10</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//A</span>
+<span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x10</span><span class="token punctuation">)</span>         <span class="token comment" spellcheck="true">//gap</span>
+B<span class="token operator">=</span><span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x420</span><span class="token operator">-</span><span class="token number">0x10</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">//B</span>
+<span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x10</span><span class="token punctuation">)</span>         <span class="token comment" spellcheck="true">//gap</span>
+
+<span class="token function">free</span><span class="token punctuation">(</span>A<span class="token punctuation">)</span>        <span class="token comment" spellcheck="true">//free A into unsorted bin.</span>
+<span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x500</span><span class="token punctuation">)</span>  <span class="token comment" spellcheck="true">//sort A into largebin.</span>
+<span class="token function">free</span><span class="token punctuation">(</span>B<span class="token punctuation">)</span>        <span class="token comment" spellcheck="true">//free B into unsorted bin.</span>
+
+A<span class="token operator">+</span><span class="token number">0x18</span><span class="token operator">=</span>evil_addr<span class="token number">-0x20</span><span class="token operator">+</span><span class="token number">8</span><span class="token operator">-</span><span class="token number">5</span>  <span class="token comment" spellcheck="true">//A->bk_nextsize=evil_addr-0x20+8-5. </span>
+A<span class="token operator">+</span><span class="token number">0x8</span><span class="token operator">=</span>evil_addr<span class="token operator">+</span><span class="token number">8</span>          <span class="token comment" spellcheck="true">//A->bk=evil_addr+8.</span>
+
+B<span class="token operator">+</span><span class="token number">0x8</span><span class="token operator">=</span>evil_addr            <span class="token comment" spellcheck="true">//B->bk=evil_addr</span>
+
+<span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x48</span><span class="token punctuation">)</span>    <span class="token comment" spellcheck="true">//evil_addr are malloced out here.</span>
+</code></pre>
+<p>large bin 伪造的堆块chunk</p>
+<pre><code>heap &amp;__free_hook
+$1={
+  prev_size = xxxxxxxxxx, 
+  size = 0x56, 
+  fd = 0x0, 
+  bk = 0x56xxxxxxxxxxxx, 
+  fd_nextsize = 0, 
+  bk_nextsize = 0
+}
+</code></pre>
+            </div>
+            <hr>
+
+            
+
+            <link rel="stylesheet" type="text/css" href="/libs/share/css/share.min.css">
+
+<div id="article-share">
+    
+    <div class="social-share" data-disabled="qzone" data-wechat-qrcode-helper="<p>微信里点“发现”->“扫一扫”二维码便可查看分享。</p>"></div>
+    
+</div>
+
+<script src="/libs/share/js/social-share.min.js"></script>
+
+            
+
+    <div class="reprint" id="reprint-statement">
+        <p class="reprint-tip">
+            <i class="fa fa-exclamation-triangle"></i>&nbsp;&nbsp;
+            <span>转载规则</span>
+        </p>
+        
+            <div class="center-align">
+                <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
+                    <img alt style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png">
+                </a>
+            </div>
+            <br>
+            <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
+                    《large bin attack原理》
+                </span> 由
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2020/02/13/large-bin-attack-yuan-li/" property="cc:attributionName" rel="cc:attributionURL">
+                时钟
+            </a> 采用
+            <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
+                知识共享署名 4.0 国际许可协议
+            </a>进行许可。
+        
+    </div>
+
+    <script async defer>
+      document.addEventListener("copy", function (e) {
+        let toastHTML = '<span>复制成功，请遵循本文的转载规则</span><button class="btn-flat toast-action" onclick="navToReprintStatement()" style="font-size: smaller">查看</a>';
+        M.toast({html: toastHTML})
+      });
+
+      function navToReprintStatement() {
+        $("html, body").animate({scrollTop: $("#reprint-statement").offset().top - 80}, 800);
+      }
+    </script>
+
+
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/2020/02/13/large-bin-attack/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="large bin attack">
+                        
+                        <span class="card-title">large bin attack</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            放三个例题，自己写的很麻烦，调试了一天，raycp师傅的脚本就思路很清晰，羡慕。
+0ctf2018-heapstorm2    add(0x28)   #0
+
+    add(0xa90)  #1
+    add(0x80)   #2
+  
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-13
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/2020/02/12/suctf2019/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/23.jpg" class="responsive-img" alt="SUCTF2019">
+                        
+                        <span class="card-title">SUCTF2019</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            SUCTF2019playfmt格式化不在栈上，读取flag，总的来说就是一个格式化的题EXP
+#!/usr/bin/env python
+from pwn import *
+from LibcSearcher import LibcSea
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-12
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/pwn/" target="_blank">
+                        <span class="chip bg-color">pwn</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+</div>
+
+
+<script>
+    $('#articleContent').on('copy', function (e) {
+        // IE8 or earlier browser is 'undefined'
+        if (typeof window.getSelection === 'undefined') return;
+
+        var selection = window.getSelection();
+        // if the selection is short let's not annoy our users.
+        if (('' + selection).length < Number.parseInt('120')) {
+            return;
+        }
+
+        // create a div outside of the visible area and fill it with the selected text.
+        var bodyElement = document.getElementsByTagName('body')[0];
+        var newdiv = document.createElement('div');
+        newdiv.style.position = 'absolute';
+        newdiv.style.left = '-99999px';
+        bodyElement.appendChild(newdiv);
+        newdiv.appendChild(selection.getRangeAt(0).cloneContents());
+
+        // we need a <pre> tag workaround.
+        // otherwise the text inside "pre" loses all the line breaks!
+        if (selection.getRangeAt(0).commonAncestorContainer.nodeName === 'PRE') {
+            newdiv.innerHTML = "<pre>" + newdiv.innerHTML + "</pre>";
+        }
+
+        var url = document.location.href;
+        newdiv.innerHTML += '<br />'
+            + '来源: 时钟<br />'
+            + '作者: 时钟<br />'
+            + '链接: <a href="' + url + '">' + url + '</a><br />'
+            + '本文章著作权归作者所有，任何形式的转载都请注明出处。';
+
+        selection.selectAllChildren(newdiv);
+        window.setTimeout(function () {bodyElement.removeChild(newdiv);}, 200);
+    });
+</script>
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget">
+            <div class="toc-title"><i class="fa fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fa fa-list"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('#articleContent').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).slideUp(500);
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).slideDown(500);
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+    
+
+</main>
+
+
+<footer class="page-footer bg-color">
+    <div class="container row center-align">
+        <div class="col s12 m8 l8 copy-right">
+            本站由&copy;<a href="https://blinkfox.github.io/" target="_blank">Blinkfox</a>基于
+            <a href="https://hexo.io/" target="_blank">Hexo</a> 的
+            <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">hexo-theme-matery</a>主题搭建.
+
+            
+                &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
+                <span class="white-color">50.1k</span>
+            
+
+            
+			
+                <br>
+                
+                <span id="busuanzi_container_site_pv">
+                    <i class="fa fa-heart-o"></i>
+                    本站总访问量 <span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+                
+                
+                <span id="busuanzi_container_site_uv">
+                    <i class="fa fa-users"></i>
+                    次,&nbsp;访客数 <span id="busuanzi_value_site_uv" class="white-color"></span> 人.
+                </span>
+                
+            
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/shizhongpwn/pwnstudy" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fa fa-github"></i>
+    </a>
+
+
+
+    <a href="mailto:522796871@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+        <i class="fa fa-envelope-open"></i>
+    </a>
+
+
+
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=522796871" class="tooltipped" data-tooltip="QQ联系我: 522796871" data-position="top" data-delay="50">
+        <i class="fa fa-qq"></i>
+    </a>
+
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+<!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fa fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字" class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script src="/js/search.js"></script>
+<script type="text/javascript">
+$(function () {
+    searchFunc("/" + "search.xml", 'searchInput', 'searchResult');
+});
+</script>
+<!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fa fa-angle-up"></i>
+    </a>
+</div>
+
+
+<script src="/libs/materialize/materialize.min.js"></script>
+<script src="/libs/masonry/masonry.pkgd.min.js"></script>
+<script src="/libs/aos/aos.js"></script>
+<script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+<script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+<script src="/js/matery.js"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+
+    <script src="/libs/others/clicklove.js"></script>
+
+
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+
+
+</body>
+</html>
