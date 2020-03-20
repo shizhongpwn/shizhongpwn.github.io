@@ -275,33 +275,25 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
                 
                 
                 
-                <a href="/categories/CTF题解/" title="CTF题解: 15">
+                <a href="/categories/CTF题解/" title="CTF题解: 16">
                     <span class="chip center-align waves-effect waves-light
                              chip-active " style="background-color: #F9EBEA;">CTF题解
-                        <span class="tag-length">15</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/加密与解密/" title="加密与解密: 1">
-                    <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #F5EEF8;">加密与解密
-                        <span class="tag-length">1</span>
+                        <span class="tag-length">16</span>
                     </span>
                 </a>
                 
                 
                 <a href="/categories/漏洞利用/" title="漏洞利用: 14">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #D5F5E3;">漏洞利用
+                             chip-default " style="background-color: #F5EEF8;">漏洞利用
                         <span class="tag-length">14</span>
                     </span>
                 </a>
                 
                 
-                <a href="/categories/编程语言/" title="编程语言: 1">
+                <a href="/categories/加密与解密/" title="加密与解密: 1">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #E8F8F5;">编程语言
+                             chip-default " style="background-color: #D5F5E3;">加密与解密
                         <span class="tag-length">1</span>
                     </span>
                 </a>
@@ -309,8 +301,16 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
                 
                 <a href="/categories/逆向工程/" title="逆向工程: 2">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default " style="background-color: #FEF9E7;">逆向工程
+                             chip-default " style="background-color: #E8F8F5;">逆向工程
                         <span class="tag-length">2</span>
+                    </span>
+                </a>
+                
+                
+                <a href="/categories/编程语言/" title="编程语言: 1">
+                    <span class="chip center-align waves-effect waves-light
+                             chip-default " style="background-color: #FEF9E7;">编程语言
+                        <span class="tag-length">1</span>
                     </span>
                 </a>
                 
@@ -324,6 +324,53 @@ $('.bg-cover').css('background-image', 'url(/medias/banner/' + new Date().getDay
 
     <article id="articles" class="container articles">
         <div class="row tags-posts">
+            
+            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/03/20/2020xctf-kang-yi-qing-gong-yi-sai/">
+                        <div class="card-image tag-image">
+                            
+                            
+                            <img src="/medias/featureimages/5.jpg" class="responsive-img" alt="2020XCTF抗疫情公益赛">
+                            
+                            <span class="card-title">2020XCTF抗疫情公益赛</span>
+                        </div>
+                    </a>
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                XCTF 抗疫情高校联赛这里面我只写一些自认为有意思的题目，不过可以看V&amp;N wp供大家参考。
+bjut这个题目的难点在于漏洞的寻找，看他用了libc 2.29，本以为会在新的安全机制上做文章，最后发现原来是数组上溢漏洞，这种漏洞c
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-03-20
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fa fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
+                                    CTF题解
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/pwn/" target="_blank">
+                            <span class="chip bg-color">pwn</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
             
             <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
@@ -853,53 +900,6 @@ babyarm这个题目并不难，难在于它是一个arm的架构，所以难以�
                 </div>
             </div>
             
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2019/11/20/2019-hu-xiang-bei/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="2019湖湘杯">
-                            
-                            <span class="card-title">2019湖湘杯</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                练习赛一共两个pwn，第一个没啥说的，第二个是个格式化，但是由于格式化之前把握不深导致菜的一批，很感谢ditto师傅能够指点一波，看了师傅的博客，受益匪浅。第一个尴尬点：
-我在泄露的时候泄露出了一个(nil)的神奇东西，本来觉得可能是那些限
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-20
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fa fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/CTF题解/" class="post-category" target="_blank">
-                                    CTF题解
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/pwn/" target="_blank">
-                            <span class="chip bg-color">pwn</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
         </div>
     </article>
 </main>
@@ -937,7 +937,7 @@ babyarm这个题目并不难，难在于它是一个arm的架构，所以难以�
 
             
                 &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
-                <span class="white-color">52.1k</span>
+                <span class="white-color">53.5k</span>
             
 
             
