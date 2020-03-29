@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>Windows 注入</title>
+      <link href="/2020/03/29/windows-zhu-ru/"/>
+      <url>/2020/03/29/windows-zhu-ru/</url>
+      
+        <content type="html"><![CDATA[<h1 id="DLL注入"><a href="#DLL注入" class="headerlink" title="DLL注入"></a>DLL注入</h1><blockquote><p>最近一直搞windows,参加了一些实战，颇有体会，记录一下。</p></blockquote><h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>DLL注入将含有恶意代码的DLL通过被远程进程调用的方式来启动恶意代码，这对于免杀是一种常见切有效的方法。</p><h3 id="DLL如何注入进正常程序？"><a href="#DLL如何注入进正常程序？" class="headerlink" title="DLL如何注入进正常程序？"></a>DLL如何注入进正常程序？</h3><p>​    恶意代码的加载器通过让远程进程调用Windows API <strong>LoadLibrary</strong>的方式强制远程进程加载恶意DLL进而实现注入，注入之后，OS会自动的调用DLLMain函数。</p><p>​    首先恶意代码加载器需要的是要注入的进程的句柄，这一般也是先通过API函数(CreateToolhelp32Snapshot,Process32First,Process32Next)发现进程，可以想象成遍历某个目录中的文件来找到想要的文件，发现进程后就会提取PID，通过windows API OpenProcess来获取进程的句柄。</p><p>​    在远程进程中调用VirtualAllocEx（如果为该API提供远程进程的句柄那么其将在远程进程中分配内存空间）来开辟内存空间，然后，调用WriteProcessMemory来将恶意DLL的名称字符写入到VirtualAllocEx函数开辟的内存空间。</p><p>​    我们可以通过加载Kernel32.dll来确定LoadLibrary的函数地址，最后我们就可以通过CreateRemoteThread实现注入，该API最重要的三个参数：受害进程的句柄，LoadLibrary的地址，以及受害进程中DLL的名称字符串。</p><h3 id="恶意DLL的特点"><a href="#恶意DLL的特点" class="headerlink" title="恶意DLL的特点"></a>恶意DLL的特点</h3><p>恶意DLL的DLLMain函数一般只包含恶意程序（他也不会写一个完整正常的DLL吧？）。</p><p>一旦注入程序，恶意DLL中的恶意程序会获得和注入进程相同的权限。</p><h3 id="如何识别是否是DLL注入"><a href="#如何识别是否是DLL注入" class="headerlink" title="如何识别是否是DLL注入"></a>如何识别是否是DLL注入</h3><p>启动器代码中的API，通过启动器中不会含有恶意程序，但是其会通过调用大量的危险API实现将附带的DLL注入到电脑的其他进程当中。</p><h3 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h3><img src="/2020/03/29/windows-zhu-ru/image-20200329161603909.png" title="This is an image">]]></content>
+      
+      
+      <categories>
+          
+          <category> 逆向工程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> reverse </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>2020XCTF抗疫情公益赛</title>
       <link href="/2020/03/20/2020xctf-kang-yi-qing-gong-yi-sai/"/>
       <url>/2020/03/20/2020xctf-kang-yi-qing-gong-yi-sai/</url>
